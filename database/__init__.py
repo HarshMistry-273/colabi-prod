@@ -1,6 +1,6 @@
-from contextlib import contextmanager
 import pymongo
-from sqlalchemy.orm import sessionmaker, Session
+from contextlib import contextmanager
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from src.config import Config
@@ -50,14 +50,14 @@ db = SessionLocal()
 
 try:
     # Creating a MongoClient to connect to the local MongoDB server
-    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    client = pymongo.MongoClient(Config.MONGODB_URL)
 
     # Selecting a specific database named 'your_database_name'
-    database = client["colabi"]
+    database = client[Config.MONGODB_DB_NAME]
 except Exception as e:
     print(f"Error: {e}")
 
 
 def get_collection():
-    collection = database["chat_history"]
+    collection = database[Config.MONGODB_COLLECTION_NAME]
     yield collection

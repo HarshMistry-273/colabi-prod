@@ -17,3 +17,6 @@ class Config:
     PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
     PINECONE_INDEX_NAME = "colabi_pinecone"
     AGENTOPS_API_KEY = os.getenv("AGENTOPS_API_KEY")
+    MONGODB_URL=os.getenv("MONGODB_URL")
+    MONGODB_DB_NAME=os.getenv("MONGODB_DB_NAME")
+    MONGODB_COLLECTION_NAME=os.getenv("MONGODB_COLLECTION_NAME")
