@@ -2,9 +2,10 @@ from langchain_community.tools import TavilySearchResults
 from langchain_community.utilities import GoogleSerperAPIWrapper
 from langchain.tools import Tool
 from src.config import Config
+from enum import Enum
 
 
-class CustomTool:
+class CustomTools:
     """
     A utility class that provides static methods to create custom search tools.
 
@@ -51,7 +52,12 @@ class CustomTool:
         return tool
 
 
-mapping = {
-    "tavily_search": CustomTool.tavily_search_results(),
-    "google_serper_search": CustomTool.google_serper_api_wrapper(Config.SERPER_API_KEY),
-}
+class ToolKit(Enum):
+    TAVILY_SEARCH = CustomTools.tavily_search_results()
+    GOOGLE_SERPER_SEARCH = CustomTools.google_serper_api_wrapper(
+        serper_api_key=Config.SERPER_API_KEY
+    )
+
+
+# [tool_name.name for tool_name in ToolKit]
+# eval(f"ToolKit.{value}.value")

@@ -1,10 +1,12 @@
 from crewai import Agent, Process, Task, Crew
+from src.agent.models import Agent as AgentModel
 from langchain.tools import Tool
 from src.config import Config
 from langchain_openai import ChatOpenAI
 from src.crew.prompts import get_comment_task_prompt, get_task_prompt
 from src.crew.serializers import OutputFile
 from crewai.tasks.task_output import TaskOutput
+from src.crew.tools import ToolKit
 
 
 class CustomAgent:
@@ -29,57 +31,28 @@ class CustomAgent:
 
     def __init__(
         self,
-        role: str,
-        goal: str,
-        backstory: str,
-        tools: list[Tool],
-        description: str,
-        expected_output: str,
-        is_chatbot: bool = False,
+        agent: AgentModel,
         model: str = Config.MODEL_NAME,
     ):
         self.model = ChatOpenAI(
             model=model,
             api_key=Config.OPENAI_API_KEY,
         )
-        self.is_chatbot = is_chatbot
-        # Agents
-        self.role = role
-        self.goal = goal
-        self.backstory = backstory
-        self.tools = tools
-        self.agents = self.create_agent()
-
-        # Tasks
-        self.expected_output = expected_output
-        self.description = description
-        self.tasks = self.create_tasks()
-
-        # Crew
-        self.crew = self.create_crew()
+        self.agent = agent
+        # self.agents = self.create_agent()
 
     def create_agent(self) -> list[Agent]:
-        agents = []
         custome_agent = Agent(
-            role=self.role,
-            goal=self.goal,
-            backstory=self.backstory,
+            role=self.agent.role,
+            goal=self.agent.goal,
+            backstory=self.agent.backstory,
             llm=self.model,
-            tools=self.tools,
-            verbose=True,
+            tools=[
+                eval(f"ToolKit.{tool_name}.value") for tool_name in self.agent.tools
+            ],
+            verbose=False,
         )
-        agents.append(custome_agent)
-        if not self.is_chatbot:
-            comment_agent = Agent(
-                role="Comment agent",
-                goal="Comment on the previous task completed by agents.",
-                backstory="You are obeserver of task being completed by Agents and you look for if task is being completed and as expexted",
-                llm=self.model,
-                verbose=True,
-            )
-            agents.append(comment_agent)
-
-        return agents
+        return custome_agent
 
     def create_tasks(self) -> list[Task]:
         tasks = []

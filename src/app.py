@@ -2,6 +2,8 @@ import os
 import nltk
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from src.tool.apis import router as tools_router
+from src.agent.apis import router as agents_router
 
 if not os.path.exists("static"):
     os.mkdir("static")
@@ -15,4 +17,6 @@ app = FastAPI(
     # redoc_url=False,
 )
 
+app.include_router(tools_router, prefix="/api/v1/tools", tags=["tools"])
+app.include_router(agents_router, prefix="/api/v1/agent", tags=["agents"])
 app.mount("/static", StaticFiles(directory="static"), name="static")

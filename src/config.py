@@ -15,8 +15,15 @@ class Config:
     TAVILY_API_KEY = os.getenv('TAVILY_API_KEY')
     REDIS_URL = os.getenv("REDIS_URL")
     PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-    PINECONE_INDEX_NAME = "colabi_pinecone"
+    PINECONE_INDEX_NAME = "colabi"
     AGENTOPS_API_KEY = os.getenv("AGENTOPS_API_KEY")
     MONGODB_URL=os.getenv("MONGODB_URL")
     MONGODB_DB_NAME=os.getenv("MONGODB_DB_NAME")
     MONGODB_COLLECTION_NAME=os.getenv("MONGODB_COLLECTION_NAME")
+    MYSQL_HOST_NAME=os.getenv("MYSQL_HOST_NAME")
+    MYSQL_USERNAME=os.getenv("MYSQL_USERNAME")
+    MYSQL_PASSWORD=os.getenv("MYSQL_PASSWORD")
+    MYSQL_PORT=os.getenv("MYSQL_PORT")
+    MYSQL_DATABASE=os.getenv("MYSQL_DATABASE")
+    SUPPORTED_FILE_TYPES = {'csv', 'pdf', 'txt', 'json'}
+
