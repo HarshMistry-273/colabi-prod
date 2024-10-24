@@ -1,19 +1,20 @@
-# import logging.config
-# import os
-# from fastapi import APIRouter, HTTPException, Request, Depends
-# from sqlalchemy.orm import Session
-# from fastapi.responses import FileResponse, JSONResponse
-# from database import get_db_session
-# from src.task.task import task_creation_celery
-# from src.task.serializers import CreateTaskSchema
-# from src.task.controllers import TaskController
-# import logging
-# from src.utils.logger import logger_set
+import logging.config
+import os
+from fastapi import APIRouter, HTTPException, Request, Depends
+from sqlalchemy.orm import Session
+from fastapi.responses import FileResponse, JSONResponse
+from database import get_db_session
+from src.task.task import task_creation_celery
+from src.task.serializers import CreateTaskSchema
+from src.task.controllers import TaskController
+import logging
+from src.utils.logger import logger_set
 
-# router = APIRouter()
+router = APIRouter()
 
-# logging.config.fileConfig("logging.conf", disable_existing_loggers=False)
-# logger = logging.getLogger(__name__)
+logging.config.fileConfig("logging.conf", disable_existing_loggers=False)
+logger = logging.getLogger(__name__)
+
 
 # @router.get("")
 # async def get_task(id: str, db: Session = Depends(get_db_session)):
@@ -66,3 +67,62 @@
 #             status_code=500,
 #             content={"data": {}, "error_msg": "Invalid request", "error": str(e)},
 #         )
+
+
+@router.post("")
+async def create_task(
+    tasks: CreateTaskSchema, request: Request, db: Session = Depends(get_db_session)
+):
+    """
+    Create a new task, process it using a custom agent, and return the results.
+
+    This function performs the following steps:
+    1. Creates a new task based on the provided CreateTaskSchema.
+    2. Retrieves the associated agent and its tools.
+    3. Initializes a CustomAgent with the agent's details and task information.
+    4. Executes the task using the CustomAgent.
+    5. Processes the output, including CSV file creation if required.
+    6. Updates the task with the results.
+    7. Returns a JSON response with the task details and outputs.
+
+    Args:
+        tasks (CreateTaskSchema): The schema containing task creation details.
+        request (Request): The incoming request object.
+
+    Returns:
+        JSONResponse: A response containing the task details, outputs, and any attachments.
+
+    Raises:
+        Potential exceptions from called functions are not explicitly handled in this function.
+    """
+    logger.info("Task create endpoint")
+
+    try:
+        task = TaskController.get_tasks_by_id_ctrl(db, tasks.task_id)
+
+        res = task_creation_celery(
+            agent_id=task.assign_task_agent_id,
+            task_id=task.id,
+            base_url=str(request.base_url),
+            include_previous_output=tasks.include_previous_output,
+            previous_output=tasks.previous_output,
+            is_csv=tasks.is_csv,
+        )
+        logger_set.info(
+            f"Task created successfully, Task id : {task.id}, Agent id : {task.assign_task_agent_id}"
+        )
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": "Task started",
+                "data": {"task_id": task.id},
+                "error_msg": "",
+                "error": "",
+            },
+        )
+    except Exception as e:
+        logger_set.info(f"Error creating task : {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"data": {}, "error_msg": "Invalid request", "error": str(e)},
+        )

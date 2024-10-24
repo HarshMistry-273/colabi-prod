@@ -178,14 +178,18 @@ class PineConeConfig:
                 )
                 # Filter results based on score threshold
                 filtered_results = [
-                    (doc, score) for doc, score in results if score >= score_threshold
+                    doc.page_content
+                    for doc, score in results
+                    if score >= score_threshold
                 ]
                 return filtered_results
 
             # Otherwise, use regular similarity search
-            return self.vector_store.similarity_search(
+            results = self.vector_store.similarity_search(
                 query=query, k=k, filter=filter, include_metadata=include_metadata
             )
+            filtered_results = [doc.page_content for doc in results]
+            return filtered_results
 
         except Exception as e:
             raise RuntimeError(f"Error performing similarity search: {str(e)}")

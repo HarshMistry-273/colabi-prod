@@ -1,3 +1,4 @@
+import json
 from crewai import Agent, Process, Task, Crew
 from src.agent.models import Agent as AgentModel
 from langchain.tools import Tool
@@ -7,6 +8,7 @@ from src.crew.prompts import get_comment_task_prompt, get_task_prompt
 from src.crew.serializers import OutputFile
 from crewai.tasks.task_output import TaskOutput
 from src.crew.tools import ToolKit
+from src.task.models import Tasks as TasksModel
 
 
 class CustomAgent:
@@ -32,6 +34,8 @@ class CustomAgent:
     def __init__(
         self,
         agent: AgentModel,
+        agent_instruction: str,
+        agent_output: str,
         model: str = Config.MODEL_NAME,
     ):
         self.model = ChatOpenAI(
@@ -39,45 +43,64 @@ class CustomAgent:
             api_key=Config.OPENAI_API_KEY,
         )
         self.agent = agent
-        # self.agents = self.create_agent()
+        self.custom_agent = self._create_agent()
 
-    def create_agent(self) -> list[Agent]:
+        self.agent_instruction = agent_instruction
+        self.agent_output = agent_output
+        self.tasks = self._create_tasks()
+
+        self.crew = self._create_crew()
+
+    def _create_agent(self) -> list[Agent]:
+        agent_list = []
         custome_agent = Agent(
-            role=self.agent.role,
-            goal=self.agent.goal,
-            backstory=self.agent.backstory,
+            role=self.agent.description,
+            goal=self.agent.key_feature,
+            backstory=self.agent.personality,
             llm=self.model,
             tools=[
-                eval(f"ToolKit.{tool_name}.value") for tool_name in self.agent.tools
+                eval(f"ToolKit.{tool_name}.value")
+                for tool_name in json.loads(self.agent.tools)
             ],
             verbose=False,
         )
-        return custome_agent
+        agent_list.append(custome_agent)
+        if not self.agent.is_chatbot:
+            comment_agent = Agent(
+                role="Comment agent",
+                goal="Comment on the previous task completed by agents.",
+                backstory="You are obeserver of task being completed by Agents and you look for if task is being completed and as expexted",
+                llm=self.model,
+                verbose=False,
+            )
+        agent_list.append(comment_agent)
 
-    def create_tasks(self) -> list[Task]:
+        return agent_list
+
+    def _create_tasks(self) -> list[Task]:
         tasks = []
-        prompt = get_task_prompt()
         custom_task = Task(
-            description=prompt,
-            expected_output=self.expected_output,
-            agent=self.agents[0],
+            description=self.agent_instruction,
+            expected_output=self.expected_ouput,
+            agent=self.custom_agent,
             output_json=OutputFile,
         )
         tasks.append(custom_task)
-        if not self.is_chatbot:
+
+        if not self.agent.is_chatbot:
             comment_prompt = get_comment_task_prompt()
             comment_task = Task(
                 description=comment_prompt,
                 expected_output="Task reviewed: ",
-                agent=self.agents[1],
+                agent=self.custom_agent[1],
             )
             tasks.append(comment_task)
 
         return tasks
 
-    def create_crew(self) -> Crew:
+    def _create_crew(self) -> Crew:
         crew = Crew(
-            agents=self.agents,
+            agents=self.custom_agent,
             tasks=self.tasks,
             process=Process.sequential,
             verbose=True,
@@ -86,14 +109,15 @@ class CustomAgent:
         )
         return crew
 
-    async def main(self) -> tuple[list[TaskOutput]]:
-        if self.is_chatbot:
+    async def main(self) -> tuple[TaskOutput]:
+        if self.agent.is_chatbot:
             response = await self.crew.kickoff_async(
-                inputs={"description": self.description}
+                inputs={"description": self.agent_instruction}
             )
             return response
+
         response = await self.crew.kickoff_async(
-            inputs={"description": self.description}
+            inputs={"description": self.agent_instruction}
         )
         output = response.tasks_output
 

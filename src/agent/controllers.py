@@ -9,7 +9,7 @@ from src.utils.utils import get_uuid
 class AgentController:
 
     @staticmethod
-    def get_agents_by_id_ctrl(db: Session, id: str) -> Agent:
+    def get_agents_by_id_ctrl(db: Session, id: int) -> Agent:
         agent = db.query(Agent).filter(Agent.id == id).first()
 
         if agent:
