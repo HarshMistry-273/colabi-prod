@@ -1,8 +1,10 @@
+import requests
 from langchain_community.tools import TavilySearchResults
 from langchain_community.utilities import GoogleSerperAPIWrapper
 from langchain.tools import Tool
 from src.config import Config
 from enum import Enum
+from crewai_tools import tool
 
 
 class CustomTools:
@@ -50,6 +52,13 @@ class CustomTools:
         )
 
         return tool
+
+    @tool("Webhook Trigger")
+    @staticmethod
+    def send_email(url: str, payload: dict) -> str:
+        """Tool to send a POST request to a webhook URL with a specified payload."""
+        headers = {"Content-Type": "application/json"}
+        res = requests.request("POST", url, headers=headers, json=payload)
 
 
 class ToolKit(Enum):

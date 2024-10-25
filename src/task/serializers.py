@@ -5,6 +5,9 @@ from pydantic import BaseModel
 
 class CreateTaskSchema(BaseModel):
     task_id: int
+    from_user: int
+    to_user: int
+    from_user_role_id:  int
     include_previous_output: Optional[bool] = False
     previous_output: Optional[list[str]] = []
     is_csv: Optional[bool] = False

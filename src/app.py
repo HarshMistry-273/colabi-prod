@@ -1,20 +1,29 @@
 import os
-import nltk
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from src.tool.apis import router as tools_router
 from src.agent.apis import router as agents_router
 from src.task.apis import router as tasks_router
+from fastapi.middleware.cors import CORSMiddleware
+
 if not os.path.exists("static"):
     os.mkdir("static")
 
-
+origins = ["*"]
 app = FastAPI(
     title="Colabi",
     # Disable OpenAPI docs in production to reduce startup time
     # openapi_url=False,
     # docs_url=False,
     # redoc_url=False,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(tools_router, prefix="/api/v1/tools", tags=["tools"])

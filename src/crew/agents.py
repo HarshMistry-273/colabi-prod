@@ -1,14 +1,10 @@
-import json
 from crewai import Agent, Process, Task, Crew
 from src.agent.models import Agent as AgentModel
-from langchain.tools import Tool
 from src.config import Config
 from langchain_openai import ChatOpenAI
-from src.crew.prompts import get_comment_task_prompt, get_task_prompt
+from src.crew.prompts import get_comment_task_prompt
 from src.crew.serializers import OutputFile
 from crewai.tasks.task_output import TaskOutput
-from src.crew.tools import ToolKit
-from src.task.models import Tasks as TasksModel
 
 
 class CustomAgent:
@@ -36,6 +32,7 @@ class CustomAgent:
         agent: AgentModel,
         agent_instruction: str,
         agent_output: str,
+        tools: list,
         model: str = Config.MODEL_NAME,
     ):
         self.model = ChatOpenAI(
@@ -43,6 +40,7 @@ class CustomAgent:
             api_key=Config.OPENAI_API_KEY,
         )
         self.agent = agent
+        self.tools = tools
         self.custom_agent = self._create_agent()
 
         self.agent_instruction = agent_instruction
@@ -58,10 +56,7 @@ class CustomAgent:
             goal=self.agent.key_feature,
             backstory=self.agent.personality,
             llm=self.model,
-            tools=[
-                eval(f"ToolKit.{tool_name}.value")
-                for tool_name in json.loads(self.agent.tools)
-            ],
+            tools=self.tools,
             verbose=False,
         )
         agent_list.append(custome_agent)
@@ -81,8 +76,8 @@ class CustomAgent:
         tasks = []
         custom_task = Task(
             description=self.agent_instruction,
-            expected_output=self.expected_ouput,
-            agent=self.custom_agent,
+            expected_output=self.agent_output,
+            agent=self.custom_agent[0],
             output_json=OutputFile,
         )
         tasks.append(custom_task)
@@ -124,4 +119,4 @@ class CustomAgent:
         custom_task_output = output[0]
         comment_task_output = output[1]
 
-        return custom_task_output, comment_task_output
+        return (custom_task_output, comment_task_output)

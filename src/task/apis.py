@@ -1,8 +1,7 @@
 import logging.config
-import os
 from fastapi import APIRouter, HTTPException, Request, Depends
 from sqlalchemy.orm import Session
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from database import get_db_session
 from src.task.task import task_creation_celery
 from src.task.serializers import CreateTaskSchema
@@ -98,31 +97,50 @@ async def create_task(
     logger.info("Task create endpoint")
 
     try:
-        task = TaskController.get_tasks_by_id_ctrl(db, tasks.task_id)
+        get_task = TaskController.get_tasks_by_id_ctrl(db, tasks.task_id)
 
-        res = task_creation_celery(
-            agent_id=task.assign_task_agent_id,
-            task_id=task.id,
+        res = await task_creation_celery(
+            agent_id=get_task.assign_task_agent_id,
+            task_id=get_task.id,
             base_url=str(request.base_url),
             include_previous_output=tasks.include_previous_output,
             previous_output=tasks.previous_output,
             is_csv=tasks.is_csv,
+            from_user=tasks.from_user,
+            to_user=tasks.to_user,
+            from_user_role_id=tasks.from_user_role_id,
         )
         logger_set.info(
-            f"Task created successfully, Task id : {task.id}, Agent id : {task.assign_task_agent_id}"
+            f"Task created successfully, Task id : {get_task.id}, Agent id : {get_task.assign_task_agent_id}"
         )
         return JSONResponse(
             status_code=200,
             content={
                 "message": "Task started",
-                "data": {"task_id": task.id},
-                "error_msg": "",
+                "data": {"task_id": get_task.id},
+                "status": True,
                 "error": "",
+            },
+        )
+    except HTTPException as e:
+        logger_set.error(f"Could not update agent : {str(e)}")
+        return JSONResponse(
+            status_code=e.status_code,
+            content={
+                "message": str(e.detail),
+                "data": {},
+                "status": False,
+                "error": str(e.detail),
             },
         )
     except Exception as e:
         logger_set.info(f"Error creating task : {e}")
         return JSONResponse(
             status_code=500,
-            content={"data": {}, "error_msg": "Invalid request", "error": str(e)},
+            content={
+                "message": "Internal server error",
+                "data": {},
+                "status": False,
+                "error": str(e),
+            },
         )

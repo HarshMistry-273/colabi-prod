@@ -13,13 +13,14 @@ def get_comment_task_prompt() -> str:
     return prompt.strip()
 
 
-def get_desc_prompt(agent: Agent, agent_instruction, previous_output, doc_context) -> str:
+def get_desc_prompt(
+    agent: Agent, agent_instruction, previous_output, doc_context
+) -> str:
     prompt = f"""Process this task: {agent_instruction}. \n\nBegin by thoroughly reading and analyzing the provided instructions and task. Your approach should prioritize clarity, precision, and accuracy in gathering and presenting information. Focus exclusively on delivering concise, relevant insights that directly address the task requirements.\n\n"""
 
     if doc_context:
         prompt += f"""### Context of Document Provided By User\nDocument: {doc_context}. \n\n"""
 
-    
     prompt += f"""
     Below information is about the group information such as focus group survey, top ideas, api data and survey. Analyze the deatils provided and improve\n ## Focus group survey: {agent.focus_group_survey}\n ## Top Ideas: {agent.top_idea}\n ## API Data: {agent.api_data}\n ## Survey: {agent.survey}\n."""
 

@@ -1,5 +1,5 @@
 from src.agent.models import Agent
-from fastapi import HTTPException, Request, UploadFile
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from src.agent.task import embedded_docs
 from src.config import Config
@@ -14,23 +14,8 @@ class AgentController:
 
         if agent:
             return agent
-        else:
-            raise HTTPException(detail="Agent not found", status_code=404)
 
-    # @staticmethod
-    # def create_agent_ctrl(
-    #     request: Request,
-    #     db: Session,
-    #     name: str,
-    #     role: str,
-    #     goal: str,
-    #     backstory: str,
-    #     tools: str,
-    #     is_chatbot: bool,
-    #     payload: dict,
-    #     file: UploadFile,
-    # ) -> list[dict]:
-    #     pass
+        raise HTTPException(detail="Agent not found", status_code=404)
 
     @staticmethod
     def update_agent_ctrl(

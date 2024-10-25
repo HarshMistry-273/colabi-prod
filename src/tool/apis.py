@@ -1,8 +1,6 @@
 import logging.config
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
-from database import get_db_session
-from sqlalchemy.orm import Session
 from src.utils.logger import logger_set
 import logging
 from src.crew.tools import ToolKit

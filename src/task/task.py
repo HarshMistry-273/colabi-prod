@@ -4,29 +4,29 @@ from database import get_db_session_celery
 from src.agent.controllers import AgentController
 from src.config import Config
 from src.crew.agents import CustomAgent
-from src.crew.prompts import get_chat_bot_prompt, get_desc_prompt, get_task_prompt
+from src.crew.prompts import get_desc_prompt
 from src.task.controllers import TaskController, TaskCompletedController
-from src.task.models import Tasks
 from src.utils.pinecone import PineConeConfig
 from src.utils.utils import get_uuid
-import pandas as pd
 from src.crew.tools import ToolKit
-from src.celery import celery_app
+import pandas as pd
 
 
 # @celery_app.task()
-def task_creation_celery(
+async def task_creation_celery(
     agent_id: str,
     task_id: str,
     base_url: str,
-    include_previous_output,
-    previous_output,
-    is_csv,
-):
+    include_previous_output: bool,
+    previous_output: list[str],
+    is_csv: bool,
+    from_user: int,
+    to_user: int,
+    from_user_role_id: int,
+) -> str:
     with get_db_session_celery() as db:
         agent = AgentController.get_agents_by_id_ctrl(db, agent_id)
         task = TaskController.get_tasks_by_id_ctrl(db, task_id)
-        breakpoint()
         doc_context = []
         previous_output = []
 
@@ -48,12 +48,6 @@ def task_creation_celery(
                 query=task.agent_instruction, score_threshold=0.2
             )
 
-            # vector_output = ps.vector_store.similarity_search(query=task.description)
-            # relevant_output = [
-            #     str(vector_output[i].page_content)
-            #     for i in range(min(len(vector_output), 2))
-            # ]
-
         if include_previous_output:
             for task_id in previous_output:
                 output = TaskController.get_tasks_by_id_ctrl(db, task_id)
@@ -62,28 +56,34 @@ def task_creation_celery(
                         "description": output.agent_instruction,
                         "expected_output": output.agent_output,
                         "response": TaskCompletedController.get_completed_task_details_by_id(
-                            db, task_id=task_id
+                            db=db, task_id=task_id
                         ).output,
                     }
                 )
 
         prompt = get_desc_prompt(
-            agent, task.agent_instruction, previous_output, doc_context
+            agent=agent,
+            agent_instruction=task.agent_instruction,
+            previous_output=previous_output,
+            doc_context=doc_context,
         )
         # prompt = get_task_prompt()
-        # t ool_names = json.loads(agent.tools)
-        # tools = []
-        # existing_tools = [tool_name.name for tool_name in ToolKit]
-        # for tool in tool_names:
-        #     if tool not in existing_tools:
-        #         raise HTTPException(detail=f"Tool {tool} not found", status_code=404)
-        #     tools.append(eval(f"ToolKit.{tool}.value"))
+        tool_names = json.loads(task.agent_tool)
+        tools = []
+        existing_tools = [tool_name.name for tool_name in ToolKit]
+        for tool in tool_names:
+            if tool not in existing_tools:
+                raise HTTPException(detail=f"Tool {tool} not found", status_code=404)
+            tools.append(eval(f"ToolKit.{tool}.value"))
 
         init_task = CustomAgent(
-            agent=agent, agent_instruction=prompt, agent_output=task.agent_output
+            agent=agent,
+            agent_instruction=prompt,
+            agent_output=task.agent_output,
+            tools=tools,
         )
 
-        custom_task_output, comment_task_output = init_task.main()
+        custom_task_output, comment_task_output = await init_task.main()
 
         max_length = max(len(v) for v in custom_task_output.json_dict.values())
 
@@ -99,13 +99,20 @@ def task_creation_celery(
             pd.DataFrame(custom_task_output.json_dict).to_csv(
                 "static/" + file_name, index=False
             )
-            full_file_url = f"{base_url}api/v1/tasks/download/{file_name}"
+            full_file_url = f"static/{file_name}"
 
-        TaskController.update_task_ctrl(
-            db, task_id, custom_task_output.raw, comment_task_output.raw, full_file_url
+        completed_task = TaskCompletedController.create_completed_task_details(
+            db=db,
+            task_id=task_id,
+            from_user=from_user,
+            to_user=to_user,
+            from_user_role_id=from_user_role_id,
+            output=custom_task_output.raw,
+            comment=comment_task_output.raw,
+            file_path=full_file_url,
         )
 
-    return f"Task Completed: {task_id}"
+    return f"Task completed: {task_id}"
 
 
 # async def chat_task_creation(
