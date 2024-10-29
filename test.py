@@ -108,8 +108,8 @@ def webhook_tool(url: str, payload: dict) -> str:
 # Define the Agent
 agent = Agent(
     role="Webhook Data Poster",
-    goal="Post data to the provided webhook URL effectively and keep payload what have been provided.",
-    backstory="Posts structured data to webhooks and handles the response.",
+    goal="You are required to post data to the specified webhook URL accurately and without making any modifications to the payload. It is essential to ensure the payload remains unchanged during the transmission process. Simply deliver the provided data directly to the URL endpoint, maintaining its original structure and content to facilitate seamless processing on the receiving end.",
+    backstory="Posts structured data to specified webhook URLs while preserving the exact payload format. You should ensure data integrity during transmission and handle responses effectively, adapting as needed to confirm successful delivery.",
     tools=[webhook_tool],
     llm=ChatOpenAI(
         model=Config.MODEL_NAME,
@@ -127,10 +127,10 @@ task = Task(
 )
 
 # Example usage
-webhook_url = "https://hooks.zapier.com/hooks/catch/20437545/29mc3qw/"  # Replace with your actual webhook URL
+webhook_url = "https://hooks.zapier.com/hooks/catch/20437545/291m0av/"  # Replace with your actual webhook URL
 payload = {
-        "to": "pranav.rangwala@gmail.com",
-        "from_email": "harshmistry27003@gmail.com",
+        "to": "harsh281.rejoice@gmail.com",
+        "from_email": "pranav258.rejoice@gmail.com",
         "subject": "This is the subject",
         "body_type": "text",
         "body": "This is an email body for test msg."
@@ -138,13 +138,13 @@ payload = {
 
 
 # # Invoke the tool via agent and task
-# response = webhook_tool(webhook_url, payload_data)
-# print("Response from webhook:", response)
+# response = webhook_tool(webhook_url, payload_data)  
+# print("Response from webhook:", response)  
 
-crew_a = Crew(
-    agent=[agent],
-    tasks=[task],
-    verbose=True,
+crew_a = Crew(         
+    agent=[agent],      
+    tasks=[task],      
+    verbose=True,     
 )
 
 res = crew_a.kickoff({"url": webhook_url, "payload": payload})

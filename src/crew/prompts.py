@@ -22,10 +22,10 @@ def get_desc_prompt(
         prompt += f"""### Context of Document Provided By User\nDocument: {doc_context}. \n\n"""
 
     prompt += f"""
-    Below information is about the group information such as focus group survey, top ideas, api data and survey. Analyze the deatils provided and improve\n ## Focus group survey: {agent.focus_group_survey}\n ## Top Ideas: {agent.top_idea}\n ## API Data: {agent.api_data}\n ## Survey: {agent.survey}\n."""
+    Below information is about the group information such as focus group survey, top ideas, api data and survey. Analyze the deatils provided and improve the overall output.\n ## Focus group survey: {agent.focus_group_survey}\n ## Top Ideas: {agent.top_idea}\n ## API Data: {agent.api_data}\n ## Survey: {agent.survey}\n."""
 
     if previous_output:
-        prompt += f"""To provide additional context, consider the following previous output from agents: {str(previous_output)}. Use this historical context to inform your analysis, ensuring continuity and building upon existing insights while avoiding redundancy. Your response should acknowledge and integrate relevant aspects of this previous work while maintaining focus on the current objectives."""
+        prompt += f"""To provide additional context, consider the following previous output: {str(previous_output)}. Use this historical context to inform your analysis, ensuring continuity and building upon existing insights while avoiding redundancy. Your response should acknowledge and integrate relevant aspects of this previous work while maintaining focus on the current objectives."""
 
     return prompt.strip()
 
@@ -48,7 +48,7 @@ async def get_chat_bot_prompt(
     if relevant_document:
         prompt += f"""
                     ### Relevant Document Context ###
-                    In addition to the chat history, use the following document context if it is related to the user's question:
+                    In addition to the chat history, use the following document context if it is related to the user's question for much better accuracy & precision:
                     {relevant_document}
                     """
 
