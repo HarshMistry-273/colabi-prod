@@ -7,9 +7,9 @@ services:
       - "8001:8000"
     env_file:
       - .env
-    volumes:
-      - ./upload:/app/upload  # Local upload directory mapping
-      - C:\Users\Dreamworld\Downloads:/app/external_upload  # External XAMPP upload directory
+    # volumes:
+    #   - ./upload:/app/upload  # Local upload directory mapping
+    #   - C:\Users\Dreamworld\Downloads:/app/external_upload  # External XAMPP upload directory
     depends_on:
       - redis
       # - db
@@ -28,7 +28,7 @@ services:
     command: celery -A src.celery worker --pool=solo --loglevel=info
     volumes:
       - .:/app
-      - ./upload:/app/upload  # Local upload directory mapping
+      # - ./upload:/app/upload  # Local upload directory mapping
       - F:\xampp\htdocs\my-focus-group-saas\public\upload:/app/external_upload  # External XAMPP upload directory
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0

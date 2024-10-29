@@ -4,7 +4,7 @@ from src.utils.logger import logger_set
 
 
 @celery_app.task()
-def embedded_docs(api_key, index_name, namespace, url, url_file_type):
+def embedded_docs(api_key: str, index_name:str, namespace:str, url: str, url_file_type:str):
     """
     Embeds documents into a Pinecone index.
 
@@ -27,7 +27,7 @@ def embedded_docs(api_key, index_name, namespace, url, url_file_type):
             api_key=api_key,
             index_name=index_name,
             namespace=namespace,
-            url=url,
+            url=url.rsplit("/")[-1],
             url_file_type=url_file_type,
         )
         pc.add_documents()

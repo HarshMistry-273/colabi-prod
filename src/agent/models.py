@@ -23,7 +23,7 @@ class Agent(Base):
     survey = Column(String(255), nullable=True)
     group_id = Column(Text, nullable=True)
     vector_id = Column(String(36), nullable=True)
-    tools = Column(String(255), nullable=True)
+    # tools = Column(String(255), nullable=True)
     is_chatbot = Column(Boolean, default=False)
     created_by = Column(Integer, nullable=True)
     created_at = Column(DateTime, nullable=True, server_default=func.now())
