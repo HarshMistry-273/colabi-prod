@@ -23,11 +23,12 @@ def embedded_docs(api_key: str, index_name:str, namespace:str, url: str, url_fil
         and is designed to be run as a Celery task for asynchronous processing.
     """
     try:
+        print(url.rsplit("/")[-1])
         pc = PineConeConfig(
             api_key=api_key,
             index_name=index_name,
             namespace=namespace,
-            url=url.rsplit("/")[-1],
+            url="/app/external_upload/"+url.rsplit("/")[-1],
             url_file_type=url_file_type,
         )
         pc.add_documents()
