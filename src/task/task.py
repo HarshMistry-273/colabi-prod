@@ -6,14 +6,17 @@ from src.config import Config
 from src.crew.agents import CustomAgent
 from src.crew.prompts import get_desc_prompt
 from src.task.controllers import TaskController, TaskCompletedController
+from src.tool.controllers import ToolsController
 from src.utils.pinecone import PineConeConfig
 from src.utils.utils import get_uuid
 from src.crew.tools import ToolKit
 import pandas as pd
+from src.celery import celery_app
+from asgiref.sync import async_to_sync
 
 
 # @celery_app.task()
-async def task_creation_celery(
+def task_creation_celery(
     agent_id: str,
     task_id: str,
     base_url: str,
@@ -61,20 +64,48 @@ async def task_creation_celery(
                     }
                 )
 
+        # Tools
+        tool_ids = json.loads(task.agent_tool)
+        tools = []
+        webhook_urls = []
+        existing_tools = [tool_name.name for tool_name in ToolKit]
+
+        for id in tool_ids:
+            tool = ToolsController.get_tool_by_uuid(db=db, id=id)
+            tool_name = tool.tool_name
+            if tool.webhook_url:
+                webhook_url = f"WEBHOOK URL OF {tool_name}: " + tool.webhook_url
+                webhook_urls.append(webhook_url)
+
+            if tool_name not in existing_tools:
+                raise HTTPException(
+                    detail=f"Tool {tool_name} not found", status_code=404
+                )
+            if id:
+                tools.append(eval(f"ToolKit.{tool_name}.value[0]"))
+
         prompt = get_desc_prompt(
             agent=agent,
             agent_instruction=task.agent_instruction,
             previous_output=previous_output,
             doc_context=doc_context,
+            webhook_urls=webhook_urls,
         )
+
+        # url = "https://hooks.zapier.com/hooks/catch/20437545/291m0av/"
+        # kwargs = {
+        #     "payload": json.dumps(
+        #         {
+        #             "to": "harsh281.rejoice@gmail.com",
+        #             "from_email": "pranav258.rejoice@gmail.com",
+        #             "subject": "This is the subject",
+        #             "body_type": "text",
+        #             "body": "This is an email body for test msg.",
+        #         }
+        #     ),
+        # }
+        # kwargs.update({"url" : url})
         # prompt = get_task_prompt()
-        tool_names = json.loads(task.agent_tool)
-        tools = []
-        existing_tools = [tool_name.name for tool_name in ToolKit]
-        for tool in tool_names:
-            if tool not in existing_tools:
-                raise HTTPException(detail=f"Tool {tool} not found", status_code=404)
-            tools.append(eval(f"ToolKit.{tool}.value"))
 
         init_task = CustomAgent(
             agent=agent,
@@ -83,7 +114,7 @@ async def task_creation_celery(
             tools=tools,
         )
 
-        custom_task_output, comment_task_output = await init_task.main()
+        custom_task_output, comment_task_output = async_to_sync(init_task.main)()
 
         max_length = max(len(v) for v in custom_task_output.json_dict.values())
 

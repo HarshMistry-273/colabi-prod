@@ -36,7 +36,7 @@ class CustomTools:
         )
 
         return tool
-
+    
     @staticmethod
     def google_serper_api_wrapper(
         tool_name: str = "google_serper_search",
@@ -59,13 +59,13 @@ class CustomTools:
         """Tool to send a POST request to a webhook URL with a specified payload."""
         headers = {"Content-Type": "application/json"}
         res = requests.request("POST", url, headers=headers, json=payload)
+        return res.json()
 
 
 class ToolKit(Enum):
-    TAVILY_SEARCH = CustomTools.tavily_search_results()
-    GOOGLE_SERPER_SEARCH = CustomTools.google_serper_api_wrapper(
-        serper_api_key=Config.SERPER_API_KEY
-    )
+    TAVILY_SEARCH = (CustomTools.tavily_search_results(),)
+    GOOGLE_SERPER_SEARCH = (CustomTools.google_serper_api_wrapper(),)
+    ZAPIER_SENT_GMAIL = (CustomTools.send_email,)
 
 
 # [tool_name.name for tool_name in ToolKit]

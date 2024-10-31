@@ -69,7 +69,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("")
-async def create_task(
+def create_task(
     tasks: CreateTaskSchema, request: Request, db: Session = Depends(get_db_session)
 ):
     """
@@ -99,7 +99,7 @@ async def create_task(
     try:
         get_task = TaskController.get_tasks_by_id_ctrl(db, tasks.task_id)
 
-        res = await task_creation_celery(
+        res = task_creation_celery(
             agent_id=get_task.assign_task_agent_id,
             task_id=get_task.id,
             base_url=str(request.base_url),

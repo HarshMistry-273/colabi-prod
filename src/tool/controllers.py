@@ -38,7 +38,7 @@ class ToolsController:
 
     @staticmethod
     def update_tools(db: Session, id: str, payload: dict) -> Tools:
-        tool = ToolsController.get_tool_by_id(db, id)
+        tool = ToolsController.get_tool_by_uuid(db, id)
         payload.update({"updated_at": datetime.now()})
         # update provided fields
         for field, value in payload.items():
@@ -60,7 +60,7 @@ class ToolsController:
             return []
 
     @staticmethod
-    def get_tool_by_id(db: Session, id: str) -> Tools:
+    def get_tool_by_uuid(db: Session, id: str) -> Tools:
         tool = db.query(Tools).filter(Tools.uuid == id).first()
 
         if tool:

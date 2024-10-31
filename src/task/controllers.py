@@ -54,7 +54,6 @@ class TaskCompletedController:
             created_at=datetime.now(),
             updated_at=datetime.now(),
         )
-
         try:
             db.add(completed_task)
             db.commit()
@@ -62,14 +61,14 @@ class TaskCompletedController:
         except Exception as e:
             raise HTTPException(detail="Database error", status_code=400)
 
-        if file_path:
+        if file_path:        
             create_file = TaskCompletedFileController.create_completed_file_details(
                 db, completed_task_id=completed_task.id, file_path=file_path
             )
 
             if not create_file:
                 ...
-
+                
         return completed_task
 
 

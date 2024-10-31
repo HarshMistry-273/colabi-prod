@@ -5,6 +5,7 @@ from langchain_openai import ChatOpenAI
 from src.crew.prompts import get_comment_task_prompt
 from src.crew.serializers import OutputFile
 from crewai.tasks.task_output import TaskOutput
+from src.utils.logger import logger_set
 
 
 class CustomAgent:
@@ -41,38 +42,72 @@ class CustomAgent:
         )
         self.agent = agent
         self.tools = tools
-        self.custom_agent = self._create_agent()
 
         self.agent_instruction = agent_instruction
         self.agent_output = agent_output
-        self.tasks = self._create_tasks()
 
+        self.custom_agent = self._create_agent()
+        self.tasks = self._create_tasks()
         self.crew = self._create_crew()
 
     def _create_agent(self) -> list[Agent]:
-        agent_list = []
-        custome_agent = Agent(
-            role=self.agent.description,
-            goal=self.agent.key_feature,
-            backstory=self.agent.personality,
-            llm=self.model,
-            tools=self.tools,
-            verbose=False,
+        logger_set.info("Agent creation started")
+
+        # Check for required attributes
+        if self.model is None:
+            logger_set.error("Model is not initialized")
+            raise ValueError("Model must be initialized")
+
+        if self.agent is None:
+            logger_set.error("Agent model is not provided")
+            raise ValueError("Agent model must be provided")
+
+        if not self.tools:
+            logger_set.error("Tools are not defined or empty")
+            raise ValueError("Tools must be provided")
+
+        logger_set.info(f"Tools used while creating agent: {self.tools}")
+        logger_set.info(f"Model used while creating agent: {self.model}")
+        logger_set.info(f"Role used while creating agent: {self.agent.description}")
+        logger_set.info(f"Goal used while creating agent: {self.agent.key_feature}")
+        logger_set.info(
+            f"Personality used while creating agent: {self.agent.personality}"
         )
-        agent_list.append(custome_agent)
-        if not self.agent.is_chatbot:
-            comment_agent = Agent(
-                role="Comment agent",
-                goal="Comment on the previous task completed by agents.",
-                backstory="You are obeserver of task being completed by Agents and you look for if task is being completed and as expexted",
+
+        agent_list = []
+
+        try:
+            custom_agent = Agent(
+                role=self.agent.description,
+                goal=self.agent.key_feature,
+                backstory=self.agent.personality,
                 llm=self.model,
+                tools=self.tools,
                 verbose=False,
             )
-        agent_list.append(comment_agent)
+            logger_set.info("Custom agent created successfully")
+            agent_list.append(custom_agent)
 
+            if not self.agent.is_chatbot:
+                comment_agent = Agent(
+                    role="Comment agent",
+                    goal="Comment on the previous task completed by agents.",
+                    backstory="You are an observer of tasks being completed by agents and check if tasks are being completed as expected.",
+                    llm=self.model,
+                    verbose=False,
+                )
+                agent_list.append(comment_agent)
+
+        except Exception as e:
+            logger_set.error(f"Error while creating agents: {e}")
+            raise
+
+        logger_set.info(f"Agents created: {agent_list}")
         return agent_list
 
     def _create_tasks(self) -> list[Task]:
+        logger_set.info("Task creation started")
+
         tasks = []
         custom_task = Task(
             description=self.agent_instruction,
@@ -91,9 +126,12 @@ class CustomAgent:
             )
             tasks.append(comment_task)
 
+        logger_set.info(f"Task created: {tasks}")
         return tasks
 
     def _create_crew(self) -> Crew:
+        logger_set.info("Crew creation started")
+
         crew = Crew(
             agents=self.custom_agent,
             tasks=self.tasks,
@@ -102,9 +140,12 @@ class CustomAgent:
             memory=True,
             output_log_file="crew.log",
         )
+        logger_set.info(f"Crew created: {crew}")
+
         return crew
 
     async def main(self) -> tuple[TaskOutput]:
+        logger_set.info("Kickout started")
         if self.agent.is_chatbot:
             response = await self.crew.kickoff_async(
                 inputs={"description": self.agent_instruction}

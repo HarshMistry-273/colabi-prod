@@ -69,7 +69,7 @@ async def get_tools(request: Request, db: Session = Depends(get_db_session)):
         id = request.query_params.get("id")
 
         if id:
-            tools = ToolsController.get_tool_by_id(db=db, id=id)
+            tools = ToolsController.get_tool_by_uuid(db=db, id=id)
         else:
             tools = ToolsController.get_all_tools(db)
 

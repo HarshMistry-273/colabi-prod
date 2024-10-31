@@ -24,8 +24,6 @@ def get_tools_serializer(tools: list[Tools]) -> list[dict]:
     if not isinstance(tools, list):
         tools = [tools]
     for tool in tools:
-        print(tool.parameters)
-        print(type(tool.parameters))
         tool_dict = {
             # Primary Key
             "id": tool.id,

@@ -6,7 +6,7 @@ try:
         "colabi",
         broker=Config.REDIS_URL,
         backend=Config.REDIS_URL,
-        include=["src.agent.task"],
+        include=["src.agent.task", "src.task.task"],
     )   
 except Exception as e:
     print(str(e))
