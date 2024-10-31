@@ -142,8 +142,9 @@ def task_creation_celery(
             comment=comment_task_output.raw,
             file_path=full_file_url,
         )
+        return completed_task
 
-    return f"Task completed: {task_id}"
+    # return f"Task completed: {task_id}"
 
 
 # async def chat_task_creation(

@@ -61,14 +61,32 @@ class TaskCompletedController:
         except Exception as e:
             raise HTTPException(detail="Database error", status_code=400)
 
-        if file_path:        
+        if file_path:
             create_file = TaskCompletedFileController.create_completed_file_details(
                 db, completed_task_id=completed_task.id, file_path=file_path
             )
 
             if not create_file:
                 ...
-                
+
+        return completed_task.id
+
+
+class TaskCompletedTaskDetails:
+    @staticmethod
+    def get_completed_task_by_id(db: Session, id: int = None):
+        completed_task = (
+            db.query(CompletedTaskDetails).filter(CompletedTaskDetails.id == id).first()
+        )
+
+        if completed_task:
+            return completed_task
+        raise HTTPException(detail="Completed task not found", status_code=404)
+
+    @staticmethod
+    def get_all_completed_task(db: Session):
+        completed_task = db.query(CompletedTaskDetails).all()
+
         return completed_task
 
 

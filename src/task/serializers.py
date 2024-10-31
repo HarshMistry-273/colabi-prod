@@ -1,5 +1,5 @@
 from typing import Optional
-from src.task.models import Tasks
+from src.task.models import Tasks, CompletedTaskDetailFiles, CompletedTaskDetails
 from pydantic import BaseModel
 
 
@@ -13,7 +13,7 @@ class CreateTaskSchema(BaseModel):
     is_csv: Optional[bool] = False
 
 
-def get_task_serializer(tasks: list[Tasks]) -> list[dict]:
+def task_serializer(tasks: list[Tasks]) -> list[dict]:
     tasks_list = []
 
     if not isinstance(tasks, list):
@@ -65,6 +65,32 @@ def get_task_serializer(tasks: list[Tasks]) -> list[dict]:
                 "created_at": str(task.created_at),
                 "updated_at": str(task.updated_at),
                 "created_by": str(task.created_by),
+            }
+        )
+
+    return tasks_list
+
+def completed_task_serializer(tasks: list[CompletedTaskDetails]) -> list[dict]:
+    tasks_list = []
+
+    if not isinstance(tasks, list):
+        tasks = [tasks]
+
+    for task in tasks:
+        tasks_list.append(
+            {
+                # Primary and Foreign Keys
+                "id": task.id,
+                "task_id" : task.task_id if task.task_id else "",
+                "from_user" : task.from_user if task.from_user else "",
+                "to_user" : task.to_user if task.to_user else "",
+                "from_user_role_id" : task.from_user_role_id if task.from_user_role_id else "",
+                "output" : task.output if task.output else "",
+                "comment" : task.comment if task.comment else "",
+                "status" : task.status if task.status else "",
+                "mark_as" : task.mark_as if task.mark_as else "",
+                "created_at" : str(task.created_at) if task.created_at else "",
+                "updated_at" : str(task.updated_at) if task.updated_at else "",
             }
         )
 
