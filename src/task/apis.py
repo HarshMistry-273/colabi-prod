@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from database import get_db_session
 from src.task.task import task_creation_celery
 from src.task.serializers import CreateTaskSchema, completed_task_serializer
-from src.task.controllers import TaskCompletedTaskDetails, TaskController
+from src.task.controllers import TaskCompletedController, TaskCompletedTaskDetails, TaskController
 import logging
 from src.utils.logger import logger_set
 
@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("")
-async def get_task(request: Request, id: int = None, db: Session = Depends(get_db_session)):
+async def get_task(
+    request: Request, id: int = None, db: Session = Depends(get_db_session)
+):
     """
     Retrieve a task by its ID and return its details as a JSON response.
 
@@ -41,7 +43,7 @@ async def get_task(request: Request, id: int = None, db: Session = Depends(get_d
         id = request.query_params.get("id")
         logger.info("Task get endpoint")
         if id:
-            tasks = TaskCompletedTaskDetails.get_completed_task_by_id(db, id)
+            tasks = TaskCompletedTaskDetails.get_completed_task_by_task_id(db, id)
         else:
             tasks = TaskCompletedTaskDetails.get_all_completed_task(db)
 
@@ -107,16 +109,35 @@ def create_task(
     try:
         get_task = TaskController.get_tasks_by_id_ctrl(db, tasks.task_id)
 
-        res = task_creation_celery(
+        completed_task = TaskCompletedController.create_completed_task_details(
+            db=db,
+            task_id=get_task.id,
+            from_user=tasks.from_user,
+            to_user=tasks.to_user,
+            from_user_role_id=tasks.from_user_role_id,
+            output=None,
+            comment=None,
+            file_path=None,
+        )
+        # res = task_creation_celery.delay(
+        #     agent_id=get_task.assign_task_agent_id,
+        #     task_id=get_task.id,
+        #     base_url=str(request.base_url),
+        #     include_previous_output=tasks.include_previous_output,
+        #     previous_output=tasks.previous_output,
+        #     is_csv=tasks.is_csv,
+        #     from_user=tasks.from_user,
+        #     to_user=tasks.to_user,
+        #     from_user_role_id=tasks.from_user_role_id,
+        # )
+        res = task_creation_celery.delay(
             agent_id=get_task.assign_task_agent_id,
             task_id=get_task.id,
             base_url=str(request.base_url),
             include_previous_output=tasks.include_previous_output,
             previous_output=tasks.previous_output,
             is_csv=tasks.is_csv,
-            from_user=tasks.from_user,
-            to_user=tasks.to_user,
-            from_user_role_id=tasks.from_user_role_id,
+            completed_task_id = completed_task.id
         )
         logger_set.info(
             f"Task created successfully, Task id : {get_task.id}, Agent id : {get_task.assign_task_agent_id}"
@@ -125,7 +146,7 @@ def create_task(
             status_code=200,
             content={
                 "message": "Task started",
-                "data": {"task_id": get_task.id, "completed_task_id": res},
+                "data": {"task_id": get_task.id, "completed_task_id": completed_task.id},
                 "status": True,
                 "error": "",
             },

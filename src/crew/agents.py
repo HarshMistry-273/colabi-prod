@@ -62,10 +62,6 @@ class CustomAgent:
             logger_set.error("Agent model is not provided")
             raise ValueError("Agent model must be provided")
 
-        if not self.tools:
-            logger_set.error("Tools are not defined or empty")
-            raise ValueError("Tools must be provided")
-
         logger_set.info(f"Tools used while creating agent: {self.tools}")
         logger_set.info(f"Model used while creating agent: {self.model}")
         logger_set.info(f"Role used while creating agent: {self.agent.description}")

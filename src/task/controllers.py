@@ -18,13 +18,24 @@ class TaskController:
 
 class TaskCompletedController:
     @staticmethod
-    def get_completed_task_details_by_id(
+    def get_completed_task_details_by_task_id(
         db: Session, task_id: int
     ) -> CompletedTaskDetails:
         completed_task = (
             db.query(CompletedTaskDetails)
             .filter(CompletedTaskDetails.task_id == task_id)
             .first()
+        )
+
+        if completed_task:
+            return completed_task
+
+        raise HTTPException(detail="Completed task not found", status_code=404)
+
+    @staticmethod
+    def get_completed_task_details_by_id(db: Session, id: int) -> CompletedTaskDetails:
+        completed_task = (
+            db.query(CompletedTaskDetails).filter(CompletedTaskDetails.id == id).first()
         )
 
         if completed_task:
@@ -52,7 +63,6 @@ class TaskCompletedController:
             comment=comment,
             status=True,
             created_at=datetime.now(),
-            updated_at=datetime.now(),
         )
         try:
             db.add(completed_task)
@@ -69,7 +79,40 @@ class TaskCompletedController:
             if not create_file:
                 ...
 
-        return completed_task.id
+        return completed_task
+
+    @staticmethod
+    def update_completed_task_details(
+        db: Session,
+        completed_task_id: int,
+        output: str,
+        comment: str,
+        file_path: str,
+    ) -> CompletedTaskDetails:
+
+        completed_task = TaskCompletedController.get_completed_task_details_by_id(
+            db=db, id=completed_task_id
+        )
+        completed_task.output = output
+        completed_task.comment = comment
+        completed_task.updated_at = datetime.now()
+
+        try:
+            db.add(completed_task)
+            db.commit()
+            db.refresh(completed_task)
+        except Exception as e:
+            raise HTTPException(detail="Database error", status_code=400)
+
+        if file_path:
+            create_file = TaskCompletedFileController.create_completed_file_details(
+                db, completed_task_id=completed_task.id, file_path=file_path
+            )
+
+            if not create_file:
+                ...
+
+        return completed_task
 
 
 class TaskCompletedTaskDetails:
@@ -77,6 +120,19 @@ class TaskCompletedTaskDetails:
     def get_completed_task_by_id(db: Session, id: int = None):
         completed_task = (
             db.query(CompletedTaskDetails).filter(CompletedTaskDetails.id == id).first()
+        )
+
+        if completed_task:
+            return completed_task
+        raise HTTPException(detail="Completed task not found", status_code=404)
+
+    @staticmethod
+    def get_completed_task_by_task_id(db: Session, id: int = None):
+        completed_task = (
+            db.query(CompletedTaskDetails)
+            .filter(CompletedTaskDetails.task_id == id)
+            .order_by(CompletedTaskDetails.created_at.desc())
+            .all()
         )
 
         if completed_task:

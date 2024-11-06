@@ -15,7 +15,7 @@ from src.celery import celery_app
 from asgiref.sync import async_to_sync
 
 
-# @celery_app.task()
+@celery_app.task()
 def task_creation_celery(
     agent_id: str,
     task_id: str,
@@ -23,9 +23,7 @@ def task_creation_celery(
     include_previous_output: bool,
     previous_output: list[str],
     is_csv: bool,
-    from_user: int,
-    to_user: int,
-    from_user_role_id: int,
+    completed_task_id: int
 ) -> str:
     with get_db_session_celery() as db:
         agent = AgentController.get_agents_by_id_ctrl(db, agent_id)
@@ -58,7 +56,7 @@ def task_creation_celery(
                     {
                         "description": output.agent_instruction,
                         "expected_output": output.agent_output,
-                        "response": TaskCompletedController.get_completed_task_details_by_id(
+                        "response": TaskCompletedController.get_completed_task_details_by_task_id(
                             db=db, task_id=task_id
                         ).output,
                     }
@@ -71,17 +69,17 @@ def task_creation_celery(
         existing_tools = [tool_name.name for tool_name in ToolKit]
 
         for id in tool_ids:
-            tool = ToolsController.get_tool_by_uuid(db=db, id=id)
-            tool_name = tool.tool_name
-            if tool.webhook_url:
-                webhook_url = f"WEBHOOK URL OF {tool_name}: " + tool.webhook_url
-                webhook_urls.append(webhook_url)
-
-            if tool_name not in existing_tools:
-                raise HTTPException(
-                    detail=f"Tool {tool_name} not found", status_code=404
-                )
             if id:
+                tool = ToolsController.get_tool_by_uuid(db=db, id=id)
+                tool_name = tool.tool_name
+                if tool.webhook_url:
+                    webhook_url = f"WEBHOOK URL OF {tool_name}: " + tool.webhook_url
+                    webhook_urls.append(webhook_url)
+
+                if tool_name not in existing_tools:
+                    raise HTTPException(
+                        detail=f"Tool {tool_name} not found", status_code=404
+                    )
                 tools.append(eval(f"ToolKit.{tool_name}.value[0]"))
 
         prompt = get_desc_prompt(
@@ -132,19 +130,16 @@ def task_creation_celery(
             )
             full_file_url = f"static/{file_name}"
 
-        completed_task = TaskCompletedController.create_completed_task_details(
+        completed_task = TaskCompletedController.update_completed_task_details(
             db=db,
-            task_id=task_id,
-            from_user=from_user,
-            to_user=to_user,
-            from_user_role_id=from_user_role_id,
+            completed_task_id=completed_task_id,
             output=custom_task_output.raw,
             comment=comment_task_output.raw,
             file_path=full_file_url,
         )
-        return completed_task
+        # return completed_task
 
-    # return f"Task completed: {task_id}"
+    return f"Task completed: {task_id}, Completed Task Id: {completed_task.id}"
 
 
 # async def chat_task_creation(
