@@ -98,9 +98,7 @@ class TaskCompletedController:
         completed_task.updated_at = datetime.now()
 
         try:
-            db.add(completed_task)
             db.commit()
-            db.refresh(completed_task)
         except Exception as e:
             raise HTTPException(detail="Database error", status_code=400)
 

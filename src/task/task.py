@@ -139,7 +139,7 @@ def task_creation_celery(
         )
         # return completed_task
 
-    return f"Task completed: {task_id}, Completed Task Id: {completed_task.id}"
+    return f"Task completed: {task_id}, Completed Task Id: {completed_task_id}"
 
 
 # async def chat_task_creation(
