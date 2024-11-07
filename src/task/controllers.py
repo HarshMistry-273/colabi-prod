@@ -158,5 +158,5 @@ class TaskCompletedFileController:
             db.commit()
             db.refresh(com_task_file)
         except Exception as e:
-            raise HTTPException(detail="Database error", status_code=400)
+            raise HTTPException(detail=f"Database error: {str(e)}", status_code=400)
         return com_task_file
