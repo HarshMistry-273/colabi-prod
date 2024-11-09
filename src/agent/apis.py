@@ -22,78 +22,6 @@ router = APIRouter()
 #     pass
 
 
-# @router.post("")
-# async def create_agent(
-#     request: Request,
-#     id: int,
-#     file_url: str,
-#     # name: str = Form(...),
-#     # description: str = Form(...),
-#     # key_feature: str = Form(...),
-#     # personality: str = Form(...),
-#     # cost: float = Form(...),
-#     # tools: Optional[str] = Form(...),
-#     # is_chatbot: Optional[bool] = Form(...),
-#     # profile_image: Optional[str] = Form(...),
-#     # video: Optional[str] = Form(...),
-#     # focus_group_survey: Optional[str] = Form(...),
-#     # own_data: Optional[str] = Form(...),
-#     # top_idea: Optional[str] = Form(...),
-#     # api_data: Optional[str] = Form(...),
-#     # survey: Optional[str] = Form(...),
-#     # group_id: Optional[str] = Form(...),
-#     # created_by: Optional[str] = Form(...),
-#     # file: UploadFile = File(...),
-#     db: Session = Depends(get_db_session),
-# ):
-#     """
-#     1. Authentication required for all api's if api's will expose to the server any one can create agents without authentication
-#     """
-#     logger.info("Agent listing endpoint")
-#     payload = {
-#         "id": id,
-#         "file_url": file_url,
-#         # "request" : request,
-#         # "db" : db,
-#         # "name" : name,
-#         # "description" : description,
-#         # "key_feature" : key_feature,
-#         # "personality" : personality,
-#         # "cost" : cost,
-#         # "profile_image" : profile_image,
-#         # "video" : video,
-#         # "focus_group_survey" : json.loads(focus_group_survey),
-#         # "own_data" : json.loads(own_data),
-#         # "top_idea" : json.loads(top_idea),
-#         # "api_data" : api_data,
-#         # "survey" : survey,
-#         # "group_id" : group_id,
-#         # "created_by" : created_by
-#     }
-#     agent = await AgentController.create_agent_ctrl(
-#         request=request,
-#         db=db,
-#         # name=name,
-#         # role=description,
-#         # goal=key_feature,
-#         # backstory=personality,
-#         # is_chatbot=is_chatbot,
-#         # tools=tools.replace('"', "").split(","),
-#         # payload=json.loads(payload),
-#         # file=file,
-#     )
-#     logger_set.info(f"Agent creation successful, Agent Id : {agent[0]['id']}")
-#     return JSONResponse(
-#         status_code=200,
-#         content={
-#             "message": "Custom Agent created",
-#             "data": {"agents": agent},
-#             "error_msg": "",
-#             "error": "",
-#         },
-#     )
-
-
 @router.put("/custom/{id}")
 def update_agent(
     request: Request,
@@ -137,8 +65,3 @@ def update_agent(
                 "error": str(e),
             },
         )
-
-
-# @router.delete("/{id}")
-# async def delete_agent(reuest: Request):
-#     pass

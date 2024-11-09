@@ -1,10 +1,9 @@
 import requests
-from langchain_community.tools import TavilySearchResults
-from langchain_community.utilities import GoogleSerperAPIWrapper
-from langchain.tools import Tool
-from src.config import Config
 from enum import Enum
 from crewai_tools import tool
+from langchain.tools import Tool
+from langchain_community.tools import TavilySearchResults
+from langchain_community.utilities import GoogleSerperAPIWrapper
 
 
 class CustomTools:
@@ -36,7 +35,7 @@ class CustomTools:
         )
 
         return tool
-    
+
     @staticmethod
     def google_serper_api_wrapper(
         tool_name: str = "google_serper_search",

@@ -1,4 +1,3 @@
-import json
 from typing import Optional
 from src.tool.models import Tools
 from pydantic import BaseModel

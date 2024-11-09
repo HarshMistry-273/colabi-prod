@@ -50,37 +50,23 @@ def task_creation_celery(
             )
 
         if include_previous_output:
-            for task_id in previous_output:
-                output = TaskController.get_tasks_by_id_ctrl(db, task_id)
+            for prev_task_id in previous_output:
+                output = TaskController.get_tasks_by_id_ctrl(db, prev_task_id)
                 previous_output.append(
                     {
                         "description": output.agent_instruction,
                         "expected_output": output.agent_output,
                         "response": TaskCompletedController.get_completed_task_details_by_task_id(
-                            db=db, task_id=task_id
+                            db=db, task_id=prev_task_id
                         ).output,
                     }
                 )
 
         # Tools
         tool_ids = json.loads(task.agent_tool)
-        tools = []
-        webhook_urls = []
-        existing_tools = [tool_name.name for tool_name in ToolKit]
-
-        for id in tool_ids:
-            if id:
-                tool = ToolsController.get_tool_by_uuid(db=db, id=id)
-                tool_name = tool.tool_name
-                if tool.webhook_url:
-                    webhook_url = f"WEBHOOK URL OF {tool_name}: " + tool.webhook_url
-                    webhook_urls.append(webhook_url)
-
-                if tool_name not in existing_tools:
-                    raise HTTPException(
-                        detail=f"Tool {tool_name} not found", status_code=404
-                    )
-                tools.append(eval(f"ToolKit.{tool_name}.value[0]"))
+        tools, webhook_urls = ToolsController.get_tools_list_as_tool_instance(
+            db=db, tool_ids=tool_ids
+        )
 
         prompt = get_desc_prompt(
             agent=agent,

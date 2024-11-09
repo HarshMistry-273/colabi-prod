@@ -1,9 +1,8 @@
-# Helper function to validate JSON parameters before saving
-from datetime import datetime
 import json
-
+from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from src.crew.tools import ToolKit
 from src.tool.models import Tools
 
 
@@ -67,3 +66,25 @@ class ToolsController:
             return tool
 
         raise HTTPException(detail="Tool not found", status_code=404)
+
+    @staticmethod
+    def get_tools_list_as_tool_instance(db: Session, tool_ids: list) -> tuple:
+        tools = []
+        webhook_urls = []
+        existing_tools = [tool_name.name for tool_name in ToolKit]
+
+        for id in tool_ids:
+            if id:
+                tool = ToolsController.get_tool_by_uuid(db=db, id=id)
+                tool_name = tool.tool_name
+                if tool.webhook_url:
+                    webhook_url = f"WEBHOOK URL OF {tool_name}: " + tool.webhook_url
+                    webhook_urls.append(webhook_url)
+
+                if tool_name not in existing_tools:
+                    raise HTTPException(
+                        detail=f"Tool {tool_name} not found", status_code=404
+                    )
+                tools.append(eval(f"ToolKit.{tool_name}.value[0]"))
+
+        return tools, webhook_urls

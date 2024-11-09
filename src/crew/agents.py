@@ -1,11 +1,11 @@
-from crewai import Agent, Process, Task, Crew
-from src.agent.models import Agent as AgentModel
 from src.config import Config
 from langchain_openai import ChatOpenAI
-from src.crew.prompts import get_comment_task_prompt
+from src.utils.logger import logger_set
 from src.crew.serializers import OutputFile
 from crewai.tasks.task_output import TaskOutput
-from src.utils.logger import logger_set
+from crewai import Agent, Process, Task, Crew
+from src.agent.models import Agent as AgentModel
+from src.crew.prompts import get_comment_task_prompt
 
 
 class CustomAgent:
@@ -45,10 +45,6 @@ class CustomAgent:
 
         self.agent_instruction = agent_instruction
         self.agent_output = agent_output
-
-        self.custom_agent = self._create_agent()
-        self.tasks = self._create_tasks()
-        self.crew = self._create_crew()
 
     def _create_agent(self) -> list[Agent]:
         logger_set.info("Agent creation started")
@@ -127,7 +123,6 @@ class CustomAgent:
 
     def _create_crew(self) -> Crew:
         logger_set.info("Crew creation started")
-
         crew = Crew(
             agents=self.custom_agent,
             tasks=self.tasks,
@@ -140,7 +135,11 @@ class CustomAgent:
 
         return crew
 
-    async def main(self) -> tuple[TaskOutput]:
+    async def main(self) -> tuple[TaskOutput, TaskOutput]:
+        self.custom_agent = self._create_agent()
+        self.tasks = self._create_tasks()
+        self.crew = self._create_crew()
+
         logger_set.info("Kickout started")
         if self.agent.is_chatbot:
             response = await self.crew.kickoff_async(

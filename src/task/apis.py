@@ -1,13 +1,12 @@
-import logging.config
-from fastapi import APIRouter, HTTPException, Request, Depends
+import logging
 from sqlalchemy.orm import Session
-from fastapi.responses import JSONResponse
 from database import get_db_session
+from src.utils.logger import logger_set
+from fastapi.responses import JSONResponse
 from src.task.task import task_creation_celery
+from fastapi import APIRouter, HTTPException, Request, Depends
 from src.task.serializers import CreateTaskSchema, completed_task_serializer
 from src.task.controllers import TaskCompletedController, TaskCompletedTaskDetails, TaskController
-import logging
-from src.utils.logger import logger_set
 
 router = APIRouter()
 
@@ -119,17 +118,7 @@ def create_task(
             comment=None,
             file_path=None,
         )
-        # res = task_creation_celery.delay(
-        #     agent_id=get_task.assign_task_agent_id,
-        #     task_id=get_task.id,
-        #     base_url=str(request.base_url),
-        #     include_previous_output=tasks.include_previous_output,
-        #     previous_output=tasks.previous_output,
-        #     is_csv=tasks.is_csv,
-        #     from_user=tasks.from_user,
-        #     to_user=tasks.to_user,
-        #     from_user_role_id=tasks.from_user_role_id,
-        # )
+
         res = task_creation_celery.delay(
             agent_id=get_task.assign_task_agent_id,
             task_id=get_task.id,

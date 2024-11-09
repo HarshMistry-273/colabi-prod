@@ -1,6 +1,6 @@
-from src.utils.pinecone import PineConeConfig
 from src.celery import celery_app
 from src.utils.logger import logger_set
+from src.utils.pinecone import PineConeConfig
 
 
 @celery_app.task()

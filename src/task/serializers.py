@@ -1,13 +1,13 @@
 from typing import Optional
-from src.task.models import Tasks, CompletedTaskDetailFiles, CompletedTaskDetails
 from pydantic import BaseModel
+from src.task.models import Tasks, CompletedTaskDetails
 
 
 class CreateTaskSchema(BaseModel):
     task_id: int
     from_user: int
     to_user: int
-    from_user_role_id:  int
+    from_user_role_id: int
     include_previous_output: Optional[bool] = False
     previous_output: Optional[list[str]] = []
     is_csv: Optional[bool] = False
@@ -70,6 +70,7 @@ def task_serializer(tasks: list[Tasks]) -> list[dict]:
 
     return tasks_list
 
+
 def completed_task_serializer(tasks: list[CompletedTaskDetails]) -> list[dict]:
     tasks_list = []
 
@@ -81,16 +82,18 @@ def completed_task_serializer(tasks: list[CompletedTaskDetails]) -> list[dict]:
             {
                 # Primary and Foreign Keys
                 "id": task.id,
-                "task_id" : task.task_id if task.task_id else "",
-                "from_user" : task.from_user if task.from_user else "",
-                "to_user" : task.to_user if task.to_user else "",
-                "from_user_role_id" : task.from_user_role_id if task.from_user_role_id else "",
-                "output" : task.output if task.output else "",
-                "comment" : task.comment if task.comment else "",
-                "status" : task.status if task.status else "",
-                "mark_as" : task.mark_as if task.mark_as else "",
-                "created_at" : str(task.created_at) if task.created_at else "",
-                "updated_at" : str(task.updated_at) if task.updated_at else "",
+                "task_id": task.task_id if task.task_id else "",
+                "from_user": task.from_user if task.from_user else "",
+                "to_user": task.to_user if task.to_user else "",
+                "from_user_role_id": (
+                    task.from_user_role_id if task.from_user_role_id else ""
+                ),
+                "output": task.output if task.output else "",
+                "comment": task.comment if task.comment else "",
+                "status": task.status if task.status else "",
+                "mark_as": task.mark_as if task.mark_as else "",
+                "created_at": str(task.created_at) if task.created_at else "",
+                "updated_at": str(task.updated_at) if task.updated_at else "",
             }
         )
 

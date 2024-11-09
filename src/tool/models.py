@@ -1,9 +1,5 @@
-from typing import Optional, Dict, Any
-from datetime import datetime
-from sqlalchemy import Column, BigInteger, String, Boolean, DateTime, JSON
-from sqlalchemy.dialects.mysql import LONGTEXT
 from database import Base
-import json
+from sqlalchemy import Column, BigInteger, String, Boolean, DateTime, JSON
 
 
 class Tools(Base):

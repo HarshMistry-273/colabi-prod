@@ -1,14 +1,11 @@
-import logging.config
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import JSONResponse
-from database import get_db_session
-from src.tool.controllers import ToolsController
-from src.tool.serializers import UpdateToolSchema, get_tools_serializer
-from src.utils.logger import logger_set
 import logging
-from src.crew.tools import ToolKit
 from sqlalchemy.orm import Session
+from database import get_db_session
+from src.utils.logger import logger_set
+from fastapi.responses import JSONResponse
+from src.tool.controllers import ToolsController
+from fastapi import APIRouter, Depends, HTTPException, Request
+from src.tool.serializers import UpdateToolSchema, get_tools_serializer
 
 logging.config.fileConfig("logging.conf", disable_existing_loggers=False)
 logger = logging.getLogger(__name__)

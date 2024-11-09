@@ -1,3 +1,4 @@
+import uuid
 from datetime import time
 from typing import Optional, List, Union
 from src.preprocessing import embeddings, splitter
@@ -9,7 +10,6 @@ from langchain_community.document_loaders import (
     TextLoader,
     CSVLoader,
 )
-import uuid
 
 
 class PineConeConfig:

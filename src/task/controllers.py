@@ -1,7 +1,7 @@
 from datetime import datetime
 from fastapi import HTTPException
-from src.task.models import CompletedTaskDetailFiles, Tasks, CompletedTaskDetails
 from sqlalchemy.orm import Session
+from src.task.models import CompletedTaskDetailFiles, Tasks, CompletedTaskDetails
 
 
 class TaskController:
@@ -95,7 +95,7 @@ class TaskCompletedController:
         )
         completed_task.output = output
         completed_task.comment = comment
-        completed_task.updated_at = datetime.now()
+        completed_task.updated_at = datetime.now().timestamp()
 
         try:
             db.commit()

@@ -1,9 +1,9 @@
-from src.agent.models import Agent
-from fastapi import HTTPException
-from sqlalchemy.orm import Session
-from src.agent.task import embedded_docs
 from src.config import Config
+from fastapi import HTTPException
+from src.agent.models import Agent
+from sqlalchemy.orm import Session
 from src.utils.utils import get_uuid
+from src.agent.task import embedded_docs
 
 
 class AgentController:
@@ -46,13 +46,3 @@ class AgentController:
         db.refresh(agent)
 
         return agent
-
-    # @staticmethod
-    # async def delete_agents_by_id_ctrl(
-    #     request: Request, db: Session, id: str
-    # ) -> list[dict]:
-    #     """
-    #     Do we have to hard delete or soft delete agent?
-    #     Do we want to delete all the task perform by the agent if user deletes that agent?
-    #     """
-    #     pass
