@@ -64,12 +64,14 @@ class TaskCompletedController:
             status=True,
             created_at=datetime.now(),
         )
+
         try:
             db.add(completed_task)
             db.commit()
             db.refresh(completed_task)
         except Exception as e:
-            raise HTTPException(detail="Database error", status_code=400)
+            db.rollback()  # Make sure to rollback the transaction
+            raise HTTPException(detail="Database error: " + str(e), status_code=400)
 
         if file_path:
             create_file = TaskCompletedFileController.create_completed_file_details(
@@ -77,7 +79,11 @@ class TaskCompletedController:
             )
 
             if not create_file:
-                ...
+                # Handle case where file creation fails
+                raise HTTPException(
+                    detail="Failed to associate file with completed task",
+                    status_code=500,
+                )
 
         return completed_task
 
@@ -95,12 +101,12 @@ class TaskCompletedController:
         )
         completed_task.output = output
         completed_task.comment = comment
-        completed_task.updated_at = datetime.now().timestamp()
+        completed_task.updated_at = datetime.now()
 
         try:
             db.commit()
         except Exception as e:
-            raise HTTPException(detail="Database error", status_code=400)
+            raise HTTPException(detail=f"Database error: {str(e)}", status_code=400)
 
         if file_path:
             create_file = TaskCompletedFileController.create_completed_file_details(

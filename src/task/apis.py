@@ -6,7 +6,11 @@ from fastapi.responses import JSONResponse
 from src.task.task import task_creation_celery
 from fastapi import APIRouter, HTTPException, Request, Depends
 from src.task.serializers import CreateTaskSchema, completed_task_serializer
-from src.task.controllers import TaskCompletedController, TaskCompletedTaskDetails, TaskController
+from src.task.controllers import (
+    TaskCompletedController,
+    TaskCompletedTaskDetails,
+    TaskController,
+)
 
 router = APIRouter()
 
@@ -118,15 +122,14 @@ def create_task(
             comment=None,
             file_path=None,
         )
-
         res = task_creation_celery.delay(
             agent_id=get_task.assign_task_agent_id,
             task_id=get_task.id,
             base_url=str(request.base_url),
             include_previous_output=tasks.include_previous_output,
-            previous_output=tasks.previous_output,
+            previous_outputs=tasks.previous_output,
             is_csv=tasks.is_csv,
-            completed_task_id = completed_task.id
+            completed_task_id=completed_task.id,
         )
         logger_set.info(
             f"Task created successfully, Task id : {get_task.id}, Agent id : {get_task.assign_task_agent_id}"
@@ -135,7 +138,10 @@ def create_task(
             status_code=200,
             content={
                 "message": "Task started",
-                "data": {"task_id": get_task.id, "completed_task_id": completed_task.id},
+                "data": {
+                    "task_id": get_task.id,
+                    "completed_task_id": completed_task.id,
+                },
                 "status": True,
                 "error": "",
             },

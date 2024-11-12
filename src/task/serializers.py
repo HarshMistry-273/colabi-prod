@@ -9,7 +9,7 @@ class CreateTaskSchema(BaseModel):
     to_user: int
     from_user_role_id: int
     include_previous_output: Optional[bool] = False
-    previous_output: Optional[list[str]] = []
+    previous_output: Optional[list[int]] = []
     is_csv: Optional[bool] = False
 
 

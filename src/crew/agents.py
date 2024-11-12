@@ -58,14 +58,6 @@ class CustomAgent:
             logger_set.error("Agent model is not provided")
             raise ValueError("Agent model must be provided")
 
-        logger_set.info(f"Tools used while creating agent: {self.tools}")
-        logger_set.info(f"Model used while creating agent: {self.model}")
-        logger_set.info(f"Role used while creating agent: {self.agent.description}")
-        logger_set.info(f"Goal used while creating agent: {self.agent.key_feature}")
-        logger_set.info(
-            f"Personality used while creating agent: {self.agent.personality}"
-        )
-
         agent_list = []
 
         try:
@@ -77,7 +69,6 @@ class CustomAgent:
                 tools=self.tools,
                 verbose=False,
             )
-            logger_set.info("Custom agent created successfully")
             agent_list.append(custom_agent)
 
             if not self.agent.is_chatbot:
@@ -89,6 +80,7 @@ class CustomAgent:
                     verbose=False,
                 )
                 agent_list.append(comment_agent)
+            logger_set.info("Custom agent created successfully")
 
         except Exception as e:
             logger_set.error(f"Error while creating agents: {e}")

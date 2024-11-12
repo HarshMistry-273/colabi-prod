@@ -1,4 +1,5 @@
 import json
+import pandas as pd
 from fastapi import HTTPException
 from database import get_db_session_celery
 from src.agent.controllers import AgentController
@@ -9,21 +10,19 @@ from src.task.controllers import TaskController, TaskCompletedController
 from src.tool.controllers import ToolsController
 from src.utils.pinecone import PineConeConfig
 from src.utils.utils import get_uuid
-from src.crew.tools import ToolKit
-import pandas as pd
 from src.celery import celery_app
 from asgiref.sync import async_to_sync
 
 
 @celery_app.task()
 def task_creation_celery(
-    agent_id: str,
-    task_id: str,
+    agent_id: int,
+    task_id: int,
     base_url: str,
     include_previous_output: bool,
-    previous_output: list[str],
+    previous_outputs: list[int],
     is_csv: bool,
-    completed_task_id: int
+    completed_task_id: int,
 ) -> str:
     with get_db_session_celery() as db:
         agent = AgentController.get_agents_by_id_ctrl(db, agent_id)
@@ -50,16 +49,30 @@ def task_creation_celery(
             )
 
         if include_previous_output:
-            for prev_task_id in previous_output:
-                output = TaskController.get_tasks_by_id_ctrl(db, prev_task_id)
+            res_opt_tsk_id = None
+            for prev_task_id in previous_outputs:
+                response_output = (
+                    TaskCompletedController.get_completed_task_details_by_id(
+                        db=db, id=prev_task_id
+                    )
+                )
+
+                if res_opt_tsk_id == None:
+                    res_opt_tsk_id = response_output.task_id
+                    output = TaskController.get_tasks_by_id_ctrl(
+                        db=db, id=res_opt_tsk_id
+                    )
+                elif res_opt_tsk_id != response_output.task_id:
+                    res_opt_tsk_id = response_output.task_id
+                    output = TaskController.get_tasks_by_id_ctrl(
+                        db=db, id=res_opt_tsk_id
+                    )
                 previous_output.append(
-                    {
-                        "description": output.agent_instruction,
-                        "expected_output": output.agent_output,
-                        "response": TaskCompletedController.get_completed_task_details_by_task_id(
-                            db=db, task_id=prev_task_id
-                        ).output,
-                    }
+                    f"""
+                        agent_instruction : {output.agent_instruction},
+                        expected_output: {output.agent_output},
+                        response: {response_output.output},
+                    """
                 )
 
         # Tools
