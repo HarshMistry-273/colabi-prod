@@ -4,7 +4,7 @@ from src.utils.pinecone import PineConeConfig
 
 
 @celery_app.task()
-def embedded_docs(api_key: str, index_name:str, namespace:str, url: str, url_file_type:str):
+def embedding_docs(api_key: str, index_name:str, namespace:str, url: str, url_file_type:str):
     """
     Embeds documents into a Pinecone index.
 

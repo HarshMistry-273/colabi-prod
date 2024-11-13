@@ -160,3 +160,7 @@ cython_debug/
 #.idea/
 
 /static
+/redis-data
+/external_upload
+docker-compose-local.yml
+test.py

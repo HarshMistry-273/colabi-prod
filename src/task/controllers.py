@@ -166,3 +166,30 @@ class TaskCompletedFileController:
         except Exception as e:
             raise HTTPException(detail=f"Database error: {str(e)}", status_code=400)
         return com_task_file
+
+
+class TaskUtils:
+    @staticmethod
+    def get_previous_outputs(db: Session, previous_outputs):
+        previous_output = []
+        res_opt_tsk_id = None
+        for prev_task_id in previous_outputs:
+            response_output = TaskCompletedController.get_completed_task_details_by_id(
+                db=db, id=prev_task_id
+            )
+
+            if res_opt_tsk_id == None:
+                res_opt_tsk_id = response_output.task_id
+                output = TaskController.get_tasks_by_id_ctrl(db=db, id=res_opt_tsk_id)
+            elif res_opt_tsk_id != response_output.task_id:
+                res_opt_tsk_id = response_output.task_id
+                output = TaskController.get_tasks_by_id_ctrl(db=db, id=res_opt_tsk_id)
+            previous_output.append(
+                f"""
+                    agent_instruction : {output.agent_instruction},
+                    expected_output: {output.agent_output},
+                    response: {response_output.output},
+                """
+            )
+
+        return previous_output
