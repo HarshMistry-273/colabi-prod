@@ -61,21 +61,3 @@ except Exception as e:
 def get_collection():
     collection = database[Config.MONGODB_COLLECTION_NAME]
     yield collection
-
-
-# cnx = mysql.connector.connect(
-#     host=Config.MYSQL_HOST_NAME,
-#     port=Config.MYSQL_PORT,
-#     user=Config.MYSQL_USERNAME,
-#     password=Config.MYSQL_PASSWORD,
-#     database=Config.MYSQL_DATABASE
-# )
-
-# def get_db_cursor():
-#     cur = cnx.cursor()
-#     try:
-#         yield cur
-#     except Exception as e:
-#         raise e
-#     finally:
-#         cur.close()

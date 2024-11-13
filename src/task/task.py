@@ -6,7 +6,7 @@ from src.agent.controllers import AgentController
 from src.config import Config
 from src.crew.agents import CustomAgent
 from src.crew.prompts import get_desc_prompt
-from src.task.controllers import TaskController, TaskCompletedController
+from src.task.controllers import TaskController, TaskCompletedController, TaskUtils
 from src.tool.controllers import ToolsController
 from src.utils.pinecone import PineConeConfig
 from src.utils.utils import get_uuid
@@ -49,31 +49,9 @@ def task_creation_celery(
             )
 
         if include_previous_output:
-            res_opt_tsk_id = None
-            for prev_task_id in previous_outputs:
-                response_output = (
-                    TaskCompletedController.get_completed_task_details_by_id(
-                        db=db, id=prev_task_id
-                    )
-                )
-
-                if res_opt_tsk_id == None:
-                    res_opt_tsk_id = response_output.task_id
-                    output = TaskController.get_tasks_by_id_ctrl(
-                        db=db, id=res_opt_tsk_id
-                    )
-                elif res_opt_tsk_id != response_output.task_id:
-                    res_opt_tsk_id = response_output.task_id
-                    output = TaskController.get_tasks_by_id_ctrl(
-                        db=db, id=res_opt_tsk_id
-                    )
-                previous_output.append(
-                    f"""
-                        agent_instruction : {output.agent_instruction},
-                        expected_output: {output.agent_output},
-                        response: {response_output.output},
-                    """
-                )
+            previous_output = TaskUtils.get_previous_outputs(
+                db=db, previous_outputs=previous_outputs
+            )
 
         # Tools
         tool_ids = json.loads(task.agent_tool)
@@ -88,21 +66,6 @@ def task_creation_celery(
             doc_context=doc_context,
             webhook_urls=webhook_urls,
         )
-
-        # url = "https://hooks.zapier.com/hooks/catch/20437545/291m0av/"
-        # kwargs = {
-        #     "payload": json.dumps(
-        #         {
-        #             "to": "harsh281.rejoice@gmail.com",
-        #             "from_email": "pranav258.rejoice@gmail.com",
-        #             "subject": "This is the subject",
-        #             "body_type": "text",
-        #             "body": "This is an email body for test msg.",
-        #         }
-        #     ),
-        # }
-        # kwargs.update({"url" : url})
-        # prompt = get_task_prompt()
 
         init_task = CustomAgent(
             agent=agent,

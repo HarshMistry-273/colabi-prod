@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from src.agent.models import Agent
 from sqlalchemy.orm import Session
 from src.utils.utils import get_uuid
-from src.agent.task import embedded_docs
+from src.agent.task import embedding_docs
 
 
 class AgentController:
@@ -33,7 +33,7 @@ class AgentController:
                 f"Unsupported file type. Supported types: {Config.SUPPORTED_FILE_TYPES}"
             )
         # Schedule document embedding task
-        embedded_docs.delay(
+        embedding_docs.delay(
             api_key=Config.PINECONE_API_KEY,
             index_name=Config.PINECONE_INDEX_NAME,
             namespace=namespace,
