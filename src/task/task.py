@@ -55,7 +55,7 @@ def task_creation_celery(
 
         # Tools
         tool_ids = json.loads(task.agent_tool)
-        tools, webhook_urls = ToolsController.get_tools_list_as_tool_instance(
+        tools = ToolsController.get_tools_list_as_tool_instance(
             db=db, tool_ids=tool_ids
         )
 
@@ -64,7 +64,6 @@ def task_creation_celery(
             agent_instruction=task.agent_instruction,
             previous_output=previous_output,
             doc_context=doc_context,
-            webhook_urls=webhook_urls,
         )
 
         init_task = CustomAgent(
