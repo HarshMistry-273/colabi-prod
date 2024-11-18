@@ -46,7 +46,7 @@ class CustomAgent:
         self.agent_instruction = agent_instruction
         self.agent_output = agent_output
 
-    def _create_agent(self) -> list[Agent]:
+    def __create_agent(self) -> list[Agent]:
         logger_set.info("Agent creation started")
 
         # Check for required attributes
@@ -89,7 +89,7 @@ class CustomAgent:
         logger_set.info(f"Agents created: {agent_list}")
         return agent_list
 
-    def _create_tasks(self) -> list[Task]:
+    def __create_tasks(self) -> list[Task]:
         logger_set.info("Task creation started")
 
         tasks = []
@@ -113,7 +113,7 @@ class CustomAgent:
         logger_set.info(f"Task created: {tasks}")
         return tasks
 
-    def _create_crew(self) -> Crew:
+    def __create_crew(self) -> Crew:
         logger_set.info("Crew creation started")
         crew = Crew(
             agents=self.custom_agent,
@@ -128,9 +128,9 @@ class CustomAgent:
         return crew
 
     async def main(self) -> tuple[TaskOutput, TaskOutput]:
-        self.custom_agent = self._create_agent()
-        self.tasks = self._create_tasks()
-        self.crew = self._create_crew()
+        self.custom_agent = self.__create_agent()
+        self.tasks = self.__create_tasks()
+        self.crew = self.__create_crew()
 
         logger_set.info("Kickout started")
         if self.agent.is_chatbot:

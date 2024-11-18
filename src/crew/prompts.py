@@ -14,12 +14,9 @@ def get_comment_task_prompt() -> str:
 
 
 def get_desc_prompt(
-    agent: Agent, agent_instruction, previous_output, doc_context, webhook_urls
+    agent: Agent, agent_instruction, previous_output, doc_context
 ) -> str:
     prompt = f"""Process this task: {agent_instruction}. \n\nBegin by thoroughly reading and analyzing the provided instructions and task. Your approach should prioritize clarity, precision, and accuracy in gathering and presenting information. Focus exclusively on delivering concise, relevant insights that directly address the task requirements.\n\n"""
-
-    if webhook_urls:
-        prompt += f"### List of Webhook URL's for specific Tools ### \n{webhook_urls}. Take payload from the tasks. Do not change the payload."
 
     if doc_context:
         prompt += f"""### Context of Document Provided By User\nDocument: {doc_context}. \n\n"""

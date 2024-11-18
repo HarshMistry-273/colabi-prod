@@ -70,16 +70,16 @@ class ToolsController:
     @staticmethod
     def get_tools_list_as_tool_instance(db: Session, tool_ids: list) -> tuple:
         tools = []
-        webhook_urls = []
+        # webhook_urls = []
         existing_tools = [tool_name.name for tool_name in ToolKit]
 
         for id in tool_ids:
             if id:
                 tool = ToolsController.get_tool_by_uuid(db=db, id=id)
                 tool_name = tool.tool_name
-                if tool.webhook_url:
-                    webhook_url = f"WEBHOOK URL OF {tool_name}: " + tool.webhook_url
-                    webhook_urls.append(webhook_url)
+                # if tool.webhook_url:
+                #     webhook_url = f"WEBHOOK URL OF {tool_name}: " + tool.webhook_url
+                #     webhook_urls.append(webhook_url)
 
                 if tool_name not in existing_tools:
                     raise HTTPException(
@@ -87,4 +87,4 @@ class ToolsController:
                     )
                 tools.append(eval(f"ToolKit.{tool_name}.value[0]"))
 
-        return tools, webhook_urls
+        return tools # , webhook_urls
