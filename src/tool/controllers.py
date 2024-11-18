@@ -4,6 +4,13 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from src.crew.tools import ToolKit
 from src.tool.models import Tools
+from database import db
+import logging
+
+from src.utils.utils import get_uuid
+
+logging.config.fileConfig("logging.conf", disable_existing_loggers=False)
+logger = logging.getLogger(__name__)
 
 
 def validate_tool_parameters(parameters: str) -> bool:
@@ -16,6 +23,32 @@ def validate_tool_parameters(parameters: str) -> bool:
         return True
     except json.JSONDecodeError:
         return False
+
+
+def insert_if_all_listed_tools_does_not_exist():
+    existing_tools = [tool_name.name for tool_name in ToolKit]
+    tools_db = db.query(Tools).all()
+
+    if len(existing_tools) != len(tools_db):
+        logging.info("Seem we have new tools in toolkit.")
+        tools_db_name = []
+
+        for tool_db in tools_db:
+            if tool_db.tool_name in existing_tools:
+                try:
+                    existing_tools.remove(tool_db.tool_name)
+                except Exception as e:
+                    continue
+        for tool in existing_tools:
+            payload = {
+                "tool_name": tool,
+                "uuid": get_uuid(),
+                "app": tool,
+                "status": True,
+            }
+            ToolsController.create_tool(db, payload)
+
+        logging.info("Added those tools in database. Update those tools accordigly")
 
 
 class ToolsController:
@@ -87,4 +120,4 @@ class ToolsController:
                     )
                 tools.append(eval(f"ToolKit.{tool_name}.value[0]"))
 
-        return tools # , webhook_urls
+        return tools  # , webhook_urls

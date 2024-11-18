@@ -1,10 +1,14 @@
 import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from src.config import Config
 from src.tool.apis import router as tools_router
 from src.agent.apis import router as agents_router
 from src.task.apis import router as tasks_router
 from fastapi.middleware.cors import CORSMiddleware
+from langtrace_python_sdk import langtrace
+
+langtrace.init(api_key=Config.LANGTRACE_API_KEY)
 
 if not os.path.exists("static"):
     os.mkdir("static")
