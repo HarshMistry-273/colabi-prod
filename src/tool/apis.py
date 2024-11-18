@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from database import get_db_session
 from src.utils.logger import logger_set
 from fastapi.responses import JSONResponse
-from src.tool.controllers import ToolsController
+from src.tool.controllers import ToolsController, insert_if_all_listed_tools_does_not_exist
 from fastapi import APIRouter, Depends, HTTPException, Request
 from src.tool.serializers import UpdateToolSchema, get_tools_serializer
 
@@ -11,6 +11,8 @@ logging.config.fileConfig("logging.conf", disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+insert_if_all_listed_tools_does_not_exist()
 
 
 @router.put("/{id}")
