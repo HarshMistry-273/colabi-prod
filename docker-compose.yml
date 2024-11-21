@@ -26,7 +26,7 @@ services:
     volumes:
       - .:/app
       # - ./upload:/app/upload  # Local upload directory mapping
-      - ..\..\my-focus-group-saas\public\upload:/app/external_upload # External XAMPP upload directory
+      - ..\public\upload:/app/external_upload # External XAMPP upload directory
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0

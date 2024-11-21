@@ -31,7 +31,6 @@ def insert_if_all_listed_tools_does_not_exist():
 
     if len(existing_tools) != len(tools_db):
         logging.info("Seem we have new tools in toolkit.")
-        tools_db_name = []
 
         for tool_db in tools_db:
             if tool_db.tool_name in existing_tools:
@@ -40,11 +39,13 @@ def insert_if_all_listed_tools_does_not_exist():
                 except Exception as e:
                     continue
         for tool in existing_tools:
+            # if tool.name == "REDDIT_SEARCH":
             payload = {
                 "tool_name": tool,
                 "uuid": get_uuid(),
                 "app": tool,
                 "status": True,
+                "parameters": json.dumps(eval(f"ToolKit.{tool}.value[1]")),
             }
             ToolsController.create_tool(db, payload)
 
@@ -103,6 +104,7 @@ class ToolsController:
     @staticmethod
     def get_tools_list_as_tool_instance(db: Session, tool_ids: list) -> tuple:
         tools = []
+        params = ""
         # webhook_urls = []
         existing_tools = [tool_name.name for tool_name in ToolKit]
 
@@ -119,5 +121,13 @@ class ToolsController:
                         detail=f"Tool {tool_name} not found", status_code=404
                     )
                 tools.append(eval(f"ToolKit.{tool_name}.value[0]"))
+                required_params = eval(f"ToolKit.{tool_name}.value[1]")
 
-        return tools  # , webhook_urls
+                if required_params:
+                    keys = list(required_params.keys())
+
+                    for i in keys:
+                        var = f"{i} = {{{i}}},"
+                        params = params + var
+
+        return tools, params  # , webhook_urls

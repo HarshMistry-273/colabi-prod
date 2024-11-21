@@ -34,6 +34,7 @@ class CustomAgent:
         agent_instruction: str,
         agent_output: str,
         tools: list,
+        params: dict = {},
         model: str = Config.MODEL_NAME,
     ):
         self.model = ChatOpenAI(
@@ -45,6 +46,7 @@ class CustomAgent:
 
         self.agent_instruction = agent_instruction
         self.agent_output = agent_output
+        self.params = params
 
     def __create_agent(self) -> list[Agent]:
         logger_set.info("Agent creation started")
@@ -133,15 +135,12 @@ class CustomAgent:
         self.crew = self.__create_crew()
 
         logger_set.info("Kickout started")
+        self.params.update({"description": self.agent_instruction})
         if self.agent.is_chatbot:
-            response = await self.crew.kickoff_async(
-                inputs={"description": self.agent_instruction}
-            )
+            response = await self.crew.kickoff_async(inputs=self.params)
             return response
 
-        response = await self.crew.kickoff_async(
-            inputs={"description": self.agent_instruction}
-        )
+        response = await self.crew.kickoff_async(inputs=self.params)
         output = response.tasks_output
 
         custom_task_output = output[0]

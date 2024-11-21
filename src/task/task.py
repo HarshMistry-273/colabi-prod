@@ -27,6 +27,13 @@ def task_creation_celery(
     with get_db_session_celery() as db:
         agent = AgentController.get_agents_by_id_ctrl(db, agent_id)
         task = TaskController.get_tasks_by_id_ctrl(db, task_id)
+        task_params = {}
+
+        try:
+            if task.agent_parameter:
+                task_params = json.loads(task.agent_parameter)
+        except Exception as e:
+            pass
         doc_context = []
         previous_output = []
 
@@ -55,7 +62,7 @@ def task_creation_celery(
 
         # Tools
         tool_ids = json.loads(task.agent_tool)
-        tools = ToolsController.get_tools_list_as_tool_instance(
+        tools, params = ToolsController.get_tools_list_as_tool_instance(
             db=db, tool_ids=tool_ids
         )
 
@@ -64,6 +71,7 @@ def task_creation_celery(
             agent_instruction=task.agent_instruction,
             previous_output=previous_output,
             doc_context=doc_context,
+            params=params,
         )
 
         init_task = CustomAgent(
@@ -71,6 +79,7 @@ def task_creation_celery(
             agent_instruction=prompt,
             agent_output=task.agent_output,
             tools=tools,
+            params=task_params,
         )
 
         custom_task_output, comment_task_output = async_to_sync(init_task.main)()
