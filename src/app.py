@@ -1,5 +1,6 @@
 import os
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from src.config import Config
 from src.tool.apis import router as tools_router
@@ -29,6 +30,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get('/')
+def root():
+    return JSONResponse(
+        content={
+                "status": "Healthy"
+            },
+        status_code=200
+    )
 
 app.include_router(tools_router, prefix="/api/v1/tools", tags=["tools"])
 app.include_router(agents_router, prefix="/api/v1/agent", tags=["agents"])
