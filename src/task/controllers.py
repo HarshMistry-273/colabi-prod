@@ -61,7 +61,7 @@ class TaskCompletedController:
             from_user_role_id=from_user_role_id,
             output=output,
             comment=comment,
-            status=1,
+            status=0,
             created_at=datetime.now(),
         )
 

@@ -115,7 +115,7 @@ def task_creation_celery(
                 output=custom_task_output.raw,
                 comment=comment_task_output.raw,
                 file_path=full_file_url,
-                status=2,
+                status=1,
             )
 
         return f"Task completed: {task_id}, Completed Task Id: {completed_task_id}"
@@ -125,7 +125,7 @@ def task_creation_celery(
         TaskCompletedController.update_completed_task_details(
             db=db,
             completed_task_id=completed_task_id,
-            status=3,
+            status=2,
         )
         return f"Task failed: {task_id}, Completed Task Id: {completed_task_id}"
 

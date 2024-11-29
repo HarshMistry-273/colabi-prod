@@ -101,7 +101,7 @@ class CompletedTaskDetails(Base):
     # Status Fields
     status = Column(
         SmallInteger, nullable=False, default=0
-    )  # 1 => pending, 2 => completed, 3 => failed
+    )  # 0 => pending, 1 => completed, 2 => failed
     mark_as = Column(
         SmallInteger, nullable=False, default=0
     )  # 0 => pending, 1 => completed, 2 => reassign
