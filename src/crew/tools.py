@@ -13,13 +13,15 @@ from langchain_community.tools import (
     TavilySearchResults,
     google_trends,
     WikipediaQueryRun,
-    YouSearchTool,
+    RedditSearchRun,
 )
 from langchain_community.utilities import (
     GoogleSerperAPIWrapper,
     google_trends as google_trends_weapper,
     WikipediaAPIWrapper,
+    reddit_search,
 )
+from langchain_community.tools.reddit_search.tool import RedditSearchSchema
 from langchain_community.utilities import OpenWeatherMapAPIWrapper
 from crewai import Crew, Task, Agent
 from src.config import Config
@@ -141,6 +143,41 @@ class CustomTools:
 
         return tool
 
+    @tool("RedditTool")
+    @staticmethod
+    def reddit_search_tool(
+        query: str,
+        sort: str,
+        time_filter: str,
+        subreddit: str,
+        limit: str,
+        tool_name: str = "reddit_search",
+        description: str = "Reddit Search tool",
+    ):
+        """
+        reddit tools
+        """
+        search = RedditSearchRun(
+            api_wrapper=reddit_search.RedditSearchAPIWrapper(
+                reddit_client_id=Config.REDIT_CLIENT_ID,
+                reddit_client_secret=Config.REDIT_SECRET_KEY,
+                reddit_user_agent="ColabiRuntime/0.0.1",
+            )
+        )
+        search_params = RedditSearchSchema(
+            query=query,
+            sort=sort,
+            time_filter=time_filter,
+            subreddit=subreddit,
+            limit=limit,
+        )
+        tool = Tool(
+            name=tool_name,
+            description=description,
+            func=search.run(search_params.dict()),
+        )
+        return tool
+
     # @staticmethod
     # def youtube(
     #     tool_name: str = "youtube",
@@ -231,21 +268,40 @@ class CustomTools:
             {"instructions": instructions, "preview_only": False, "additionalProp1": {}}
         )
 
-        response = requests.request("POST", url, headers=headers, data=payload)
-        print("Response...", response.text)
+        try:
+            response = requests.request("POST", url, headers=headers, data=payload)
+        except Exception as e:
+            return {"error": f"Error while doing task. Error: {str(e)}"}
 
         return response.json()
 
 
+class ToolsParameters:
+    REDDIT_SEARCH_PARAMS = {
+        "query": "str",
+        "sort": "str",
+        "time_filter": "str",
+        "subreddit": "str",
+        "limit": "str",
+    }
+
+    ZAPIER_NLA_PARAMS = {"api_key": "str"}
+
+
 class ToolKit(Enum):
     # YOUTUBE_SEARCH = (CustomTools.youtube(),)
-    YOUTUBE_VIDEO_SEARCH = (CustomTools.youtube_video_search(),)
-    YOUTUBE_CHANNEL_SEARCH = (CustomTools.youtube_channel_search(),)
-    DALLE_TOOL = (CustomTools.dalle_tool(),)
-    SCRAPE_WEBSITE = (CustomTools.scrape_website(),)
-    TAVILY_SEARCH = (CustomTools.tavily_search_results(),)
-    GOOGLE_SERPER_SEARCH = (CustomTools.google_serper_api(),)
-    GOOGLE_TRENDS = (CustomTools.google_trends_api(),)
-    OPEN_WEATHER_MAP = (CustomTools.open_weather_map(),)
-    ZAPIER_NLA = (CustomTools.zapier_nla_tool,)
-    WIKIPEDIA = (CustomTools.wikipedia(),)
+    YOUTUBE_VIDEO_SEARCH = (CustomTools.youtube_video_search(), {}, False)
+    YOUTUBE_CHANNEL_SEARCH = (CustomTools.youtube_channel_search(), {}, False)
+    DALLE_TOOL = (CustomTools.dalle_tool(), {}, False)
+    SCRAPE_WEBSITE = (CustomTools.scrape_website(), {}, False)
+    TAVILY_SEARCH = (CustomTools.tavily_search_results(), {}, False)
+    GOOGLE_SERPER_SEARCH = (CustomTools.google_serper_api(), {}, False)
+    GOOGLE_TRENDS = (CustomTools.google_trends_api(), {}, False)
+    OPEN_WEATHER_MAP = (CustomTools.open_weather_map(), {}, False)
+    WIKIPEDIA = (CustomTools.wikipedia(), {}, False)
+    ZAPIER_NLA = (CustomTools.zapier_nla_tool, ToolsParameters.ZAPIER_NLA_PARAMS, False)
+    REDDIT_SEARCH = (
+        CustomTools.reddit_search_tool,
+        ToolsParameters.REDDIT_SEARCH_PARAMS,
+        True,
+    )

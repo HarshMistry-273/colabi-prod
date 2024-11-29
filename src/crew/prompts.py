@@ -14,7 +14,7 @@ def get_comment_task_prompt() -> str:
 
 
 def get_desc_prompt(
-    agent: Agent, agent_instruction, previous_output, doc_context
+    agent: Agent, agent_instruction, previous_output, doc_context, params
 ) -> str:
     prompt = f"""Process this task: {agent_instruction}. \n\nBegin by thoroughly reading and analyzing the provided instructions and task. Your approach should prioritize clarity, precision, and accuracy in gathering and presenting information. Focus exclusively on delivering concise, relevant insights that directly address the task requirements.\n\n"""
 
@@ -26,7 +26,9 @@ def get_desc_prompt(
 
     if previous_output:
         prompt += f"""To provide additional context, consider the following previous output: {str(previous_output)}. Use this historical context to inform your analysis, ensuring continuity and building upon existing insights while avoiding redundancy. Your response should acknowledge and integrate relevant aspects of this previous work while maintaining focus on the current objectives."""
-
+    if params:
+        prompt += params
+    
     return prompt.strip()
 
 

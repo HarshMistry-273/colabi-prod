@@ -12,6 +12,7 @@ from src.utils.pinecone import PineConeConfig
 from src.utils.utils import get_uuid
 from src.celery import celery_app
 from asgiref.sync import async_to_sync
+from src.utils.logger import logger_set
 
 
 @celery_app.task()
@@ -24,83 +25,109 @@ def task_creation_celery(
     is_csv: bool,
     completed_task_id: int,
 ) -> str:
-    with get_db_session_celery() as db:
-        agent = AgentController.get_agents_by_id_ctrl(db, agent_id)
-        task = TaskController.get_tasks_by_id_ctrl(db, task_id)
-        doc_context = []
-        previous_output = []
+    try:
+        logger_set.info(f"Celery task started. Task Id: {task_id}")
+        with get_db_session_celery() as db:
+            agent = AgentController.get_agents_by_id_ctrl(db, agent_id)
+            task = TaskController.get_tasks_by_id_ctrl(db, task_id)
+            task_params = {}
+            params = ""
 
-        if agent.own_data:
-            if not agent.vector_id:
-                raise HTTPException(
-                    detail="Vector of own file not found.", status_code=404
+            try:
+                if task.agent_parameter:
+                    task_params = json.loads(task.agent_parameter)
+                    keys = list(task_params.keys())
+
+                    for i in keys:
+                        var = f"{i} = {{{i}}},"
+                        params = params + var
+            except Exception as e:
+                pass
+            doc_context = []
+            previous_output = []
+
+            if agent.own_data:
+                if not agent.vector_id:
+                    raise HTTPException(
+                        detail="Vector of own file not found.", status_code=404
+                    )
+
+                namespace = agent.vector_id
+
+                ps = PineConeConfig(
+                    api_key=Config.PINECONE_API_KEY,
+                    index_name=Config.PINECONE_INDEX_NAME,
+                    namespace=namespace,
                 )
 
-            namespace = agent.vector_id
+                doc_context = ps.similarity_search(
+                    query=task.agent_instruction, score_threshold=0.2
+                )
 
-            ps = PineConeConfig(
-                api_key=Config.PINECONE_API_KEY,
-                index_name=Config.PINECONE_INDEX_NAME,
-                namespace=namespace,
+            if include_previous_output:
+                previous_output = TaskUtils.get_previous_outputs(
+                    db=db, previous_outputs=previous_outputs
+                )
+
+            # Tools
+            tool_ids = json.loads(task.agent_tool)
+            tools = ToolsController.get_tools_list_as_tool_instance(
+                db=db, tool_ids=tool_ids
             )
 
-            doc_context = ps.similarity_search(
-                query=task.agent_instruction, score_threshold=0.2
+            prompt = get_desc_prompt(
+                agent=agent,
+                agent_instruction=task.agent_instruction,
+                previous_output=previous_output,
+                doc_context=doc_context,
+                params=params,
             )
 
-        if include_previous_output:
-            previous_output = TaskUtils.get_previous_outputs(
-                db=db, previous_outputs=previous_outputs
+            init_task = CustomAgent(
+                agent=agent,
+                agent_instruction=prompt,
+                agent_output=task.agent_output,
+                tools=tools,
+                params=task_params,
             )
 
-        # Tools
-        tool_ids = json.loads(task.agent_tool)
-        tools = ToolsController.get_tools_list_as_tool_instance(
-            db=db, tool_ids=tool_ids
-        )
+            custom_task_output, comment_task_output = async_to_sync(init_task.main)()
 
-        prompt = get_desc_prompt(
-            agent=agent,
-            agent_instruction=task.agent_instruction,
-            previous_output=previous_output,
-            doc_context=doc_context,
-        )
+            max_length = max(len(v) for v in custom_task_output.json_dict.values())
 
-        init_task = CustomAgent(
-            agent=agent,
-            agent_instruction=prompt,
-            agent_output=task.agent_output,
-            tools=tools,
-        )
+            # Handle the edge cases in which if we do get empty column
+            for key in custom_task_output.json_dict.keys():
+                custom_task_output.json_dict[key] += [None] * (
+                    max_length - len(custom_task_output.json_dict[key])
+                )
 
-        custom_task_output, comment_task_output = async_to_sync(init_task.main)()
+            full_file_url = None
+            if is_csv:
+                file_name = f"{get_uuid()}.csv"
+                pd.DataFrame(custom_task_output.json_dict).to_csv(
+                    "static/" + file_name, index=False
+                )
+                full_file_url = f"static/{file_name}"
 
-        max_length = max(len(v) for v in custom_task_output.json_dict.values())
-
-        # Handle the edge cases in which if we do get empty column
-        for key in custom_task_output.json_dict.keys():
-            custom_task_output.json_dict[key] += [None] * (
-                max_length - len(custom_task_output.json_dict[key])
+            TaskCompletedController.update_completed_task_details(
+                db=db,
+                completed_task_id=completed_task_id,
+                output=custom_task_output.raw,
+                comment=comment_task_output.raw,
+                file_path=full_file_url,
+                status=1,
             )
 
-        full_file_url = None
-        if is_csv:
-            file_name = f"{get_uuid()}.csv"
-            pd.DataFrame(custom_task_output.json_dict).to_csv(
-                "static/" + file_name, index=False
-            )
-            full_file_url = f"static/{file_name}"
+        return f"Task completed: {task_id}, Completed Task Id: {completed_task_id}"
+    except Exception as e:
+        logger_set.info(f"Celery task failed. Task Id: {task_id}. Error: {str(e)}")
 
-        completed_task = TaskCompletedController.update_completed_task_details(
+        TaskCompletedController.update_completed_task_details(
             db=db,
             completed_task_id=completed_task_id,
-            output=custom_task_output.raw,
-            comment=comment_task_output.raw,
-            file_path=full_file_url,
+            status=2,
         )
-        # return completed_task
-
-    return f"Task completed: {task_id}, Completed Task Id: {completed_task_id}"
+        return f"Task failed: {task_id}, Completed Task Id: {completed_task_id}"
 
 
 # async def chat_task_creation(

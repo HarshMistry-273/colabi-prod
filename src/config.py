@@ -26,6 +26,8 @@ class Config:
     MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
     ZAPIER_NLA_API_KEY = os.getenv("ZAPIER_NLA_API_KEY")
     EXPOSED_ACTION_URL = os.getenv("EXPOSED_ACTION_URL")
+    CRYPTO_SALT = os.getenv("CRYPTO_SALT")
+    CRYPTO_SECRET_KEY = os.getenv("CRYPTO_SECRET_KEY")
     SUPPORTED_FILE_TYPES = {"csv", "pdf", "txt", "json"}
 
     # Additional API Keys
