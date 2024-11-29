@@ -104,7 +104,6 @@ class ToolsController:
     @staticmethod
     def get_tools_list_as_tool_instance(db: Session, tool_ids: list) -> tuple:
         tools = []
-        params = ""
         # webhook_urls = []
         existing_tools = [tool_name.name for tool_name in ToolKit]
 
@@ -121,13 +120,13 @@ class ToolsController:
                         detail=f"Tool {tool_name} not found", status_code=404
                     )
                 tools.append(eval(f"ToolKit.{tool_name}.value[0]"))
-                required_params = eval(f"ToolKit.{tool_name}.value[1]")
+                # required_params = eval(f"ToolKit.{tool_name}.value[1]")
 
-                if required_params:
-                    keys = list(required_params.keys())
+                # if required_params:
+                #     keys = list(required_params.keys())
 
-                    for i in keys:
-                        var = f"{i} = {{{i}}},"
-                        params = params + var
+                #     for i in keys:
+                #         var = f"{i} = {{{i}}},"
+                #         params = params + var
 
-        return tools, params  # , webhook_urls
+        return tools  # , webhook_urls

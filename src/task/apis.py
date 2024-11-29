@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 @router.get("")
 async def get_task(
-    request: Request, id: int = None, db: Session = Depends(get_db_session)
+    request: Request, id: int, db: Session = Depends(get_db_session)
 ):
     """
     Retrieve a task by its ID and return its details as a JSON response.

@@ -61,7 +61,7 @@ class TaskCompletedController:
             from_user_role_id=from_user_role_id,
             output=output,
             comment=comment,
-            status=True,
+            status=1,
             created_at=datetime.now(),
         )
 
@@ -91,9 +91,10 @@ class TaskCompletedController:
     def update_completed_task_details(
         db: Session,
         completed_task_id: int,
-        output: str,
-        comment: str,
-        file_path: str,
+        status: bool,
+        output: str  = None,
+        comment: str = None,
+        file_path: str = None,
     ) -> CompletedTaskDetails:
 
         completed_task = TaskCompletedController.get_completed_task_details_by_id(
@@ -101,6 +102,7 @@ class TaskCompletedController:
         )
         completed_task.output = output
         completed_task.comment = comment
+        completed_task.status = status
         completed_task.updated_at = datetime.now()
 
         try:
