@@ -8,7 +8,13 @@ from sqlalchemy.orm import scoped_session
 from contextlib import contextmanager
 from typing import Generator
 
-engine = create_engine(Config.DATABSE_URL)
+engine = create_engine(
+    Config.DATABSE_URL,
+    pool_size=10,  # Number of connections to keep open
+    max_overflow=20,  # Number of connections to allow beyond pool_size
+    pool_timeout=30,  # Time in seconds to wait before giving up on getting a connection
+    pool_recycle=1800,  # Number of seconds after which a connection will be recycled)
+)
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
