@@ -29,6 +29,7 @@ class Config:
     CRYPTO_SALT = os.getenv("CRYPTO_SALT")
     CRYPTO_SECRET_KEY = os.getenv("CRYPTO_SECRET_KEY")
     SUPPORTED_FILE_TYPES = {"csv", "pdf", "txt", "json"}
+    BASE_URL = os.getenv('BASE_URL')
 
     # Additional API Keys
     PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")

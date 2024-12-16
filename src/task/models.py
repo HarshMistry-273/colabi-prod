@@ -146,7 +146,7 @@ class CompletedTaskDetails(Base):
     # Task Details
     output = Column(Text, nullable=True)
     comment = Column(Text, nullable=True)
-
+    reason_for_reassign = Column(Text, nullable=True)
     # Status Fields
     status = Column(
         SmallInteger, nullable=False, default=0

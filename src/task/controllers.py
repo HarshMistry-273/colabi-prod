@@ -1,7 +1,20 @@
 from datetime import datetime
+from crewai import Agent, Crew, Task
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from src.task.models import CompletedTaskDetailFiles, Tasks, CompletedTaskDetails
+from src.config import Config
+from src.task.models import (
+    CompletedTaskDetailFiles,
+    TaskUser,
+    Tasks,
+    CompletedTaskDetails,
+    WorkFlow,
+    User,
+)
+from textwrap import dedent
+from sqlalchemy import func
+from datetime import date
+from langchain_openai import ChatOpenAI
 
 
 class TaskController:
@@ -14,6 +27,156 @@ class TaskController:
             return task
 
         raise HTTPException(detail="Task not found", status_code=404)
+
+    @staticmethod
+    def summary_of_delayed_rework_task_ctrl(db: Session, user_id: int) -> str:
+
+        users_tasks = db.query(TaskUser).filter(TaskUser.user_id == user_id).all()
+
+        if not users_tasks:
+            raise HTTPException(detail="User has no task", status_code=404)
+
+        task_ids = [
+            task_id.task_id for task_id in users_tasks if task_id.user_id == user_id
+        ]
+
+        delay_query = (
+            db.query(
+                Tasks.id,
+                Tasks.assign_task_team_member_id,
+                Tasks.workflow_id,
+                Tasks.completion_date,
+                WorkFlow.title,
+                func.datediff(func.current_date(), Tasks.completion_date).label(
+                    "delay_duration"
+                ),
+                User.name,
+            )
+            .join(WorkFlow, Tasks.workflow_id == WorkFlow.id, isouter=True)
+            .join(User, Tasks.assign_task_team_member_id == User.id, isouter=True)
+            .filter(Tasks.id.in_(task_ids))
+            .filter(Tasks.status != "Completed")
+            .filter(Tasks.completion_date < date.today())
+        ).all()
+        delay_data = []
+        print("Delayed task...", len(delay_query))
+        for i in delay_query:
+            delay_data.append(
+                {
+                    "task_id": i[0],
+                    "assign_task_team_memeber_id": i[1],
+                    "workflow_id": i[2],
+                    "completion_date": i[3],
+                    "title": i[4],
+                    "delay_duration": i[5],
+                    "name": i[6],
+                }
+            )
+        completed_query = (
+            db.query(
+                Tasks.id,
+                Tasks.assign_task_team_member_id,
+                Tasks.workflow_id,
+                Tasks.completion_date,
+                WorkFlow.title,
+                User.name,
+            )
+            .join(WorkFlow, Tasks.workflow_id == WorkFlow.id, isouter=True)
+            .join(User, Tasks.assign_task_team_member_id == User.id, isouter=True)
+            .filter(Tasks.id.in_(task_ids))
+            .filter(Tasks.status == "Completed")
+        ).all()
+        completed_data = []
+        print("Completed task...", len(completed_query))
+        for i in completed_query:
+            completed_data.append(
+                {
+                    "task_id": i[0],
+                    "assign_task_team_memeber_id": i[1],
+                    "workflow_id": i[2],
+                    "completion_date": i[3],
+                    "title": i[4],
+                    "name": i[5],
+                }
+            )
+
+        rework_query = (
+            db.query(
+                CompletedTaskDetails.id,
+                CompletedTaskDetails.task_id,
+                CompletedTaskDetails.mark_as,
+                Tasks.agent_instruction,
+                Tasks.agent_output,
+                CompletedTaskDetails.output,
+                CompletedTaskDetails.status,
+                CompletedTaskDetails.reason_for_reassign,
+            )
+            .join(Tasks, CompletedTaskDetails.task_id == Tasks.id, isouter=True)
+            .filter(CompletedTaskDetails.mark_as == 2)
+        ).all()
+
+        print("Delayed task...", len(rework_query))
+        rework_data = []
+
+        for i in rework_query:
+            rework_data.append(
+                {
+                    "completed_task_id": i[0],
+                    "task_id": i[1],
+                    "mark_as": i[2],
+                    "agent_instruction": i[3],
+                    "expected_output": i[4],
+                    "output": i[5],
+                    "status": i[6],
+                }
+            )
+
+        llm = ChatOpenAI(model=Config.MODEL_NAME, api_key=Config.OPENAI_API_KEY)
+
+        data_analyst = Agent(
+            role="Senior Data Analyst",
+            goal="You receive data from the database developer and analyze it",
+            backstory=dedent(
+                """
+            You have deep experience with analyzing datasets using Python.
+            Your work is always based on the provided data and is clear,
+            easy-to-understand and to the point. You have attention
+            to detail and always produce very detailed work (as long as you need).
+        """
+            ),
+            llm=llm,
+            allow_delegation=False,
+        )
+
+        analyze_data = Task(
+            description="Analyze the data from the database and write an analysis for Completed Data: {completed_data}, Total completed task: {total_completed_tasks} Delayed Data: {delay_data}, Total Delayed Task: {total_delayed_tasks}, Rework Data: {rework_data} and Total Rework Tasks: {total_rework_tasks}, ",
+            # expected_output="Analyze the provided data, generating a succinct narrative highlighting key performance metrics, task outcomes, and critical insights. Provide a straightforward assessment using a list or string format, focusing on concrete observations without speculative language.",
+            expected_output="Analysis of the data as a list of string. Analysis example can be: Your team completed 45 tasks today, with 3 delays and 5 reworks... Strict Note: Do not provide markdown output. Keep output short and precise as shown in example. Do NOT use phrases like 'further analysis is needed' or similar, Instead, you must directly analyze the given data with the available information and provide a clear conclusion based on that data. ",
+            agent=data_analyst,
+            # context=[extract_data],
+        )
+
+        crew = Crew(
+            agents=[data_analyst],
+            tasks=[analyze_data],
+            # process=Process.sequential,
+            verbose=False,
+            memory=False,
+            output_log_file="crew.log",
+        )
+
+        inputs = {
+            "delay_data": str(delay_data),
+            "total_delayed_tasks": len(delay_query),
+            "rework_data": str(rework_data),
+            "total_rework_tasks": len(rework_query),
+            "completed_data": str(completed_data),
+            "total_completed_tasks": len(completed_query),
+        }
+
+        result = crew.kickoff(inputs=inputs)
+
+        return result.raw
 
 
 class TaskCompletedController:
@@ -92,7 +255,7 @@ class TaskCompletedController:
         db: Session,
         completed_task_id: int,
         status: bool,
-        output: str  = None,
+        output: str = None,
         comment: str = None,
         file_path: str = None,
     ) -> CompletedTaskDetails:
@@ -168,6 +331,20 @@ class TaskCompletedFileController:
         except Exception as e:
             raise HTTPException(detail=f"Database error: {str(e)}", status_code=400)
         return com_task_file
+
+    @staticmethod
+    def get_completed_file_details(
+        db: Session, completed_task_id: int
+    ) -> CompletedTaskDetailFiles:
+        file_details = (
+            db.query(CompletedTaskDetailFiles)
+            .filter(
+                CompletedTaskDetailFiles.completed_task_detail_id == completed_task_id
+            )
+            .first()
+        )
+
+        return file_details
 
 
 class TaskUtils:
