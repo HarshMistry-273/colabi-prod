@@ -1,6 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel
-from src.task.models import Tasks, CompletedTaskDetails
+from src.task.models import CompletedTaskDetailFiles, Tasks, CompletedTaskDetails
+from src.config import Config
 
 
 class CreateTaskSchema(BaseModel):
@@ -89,9 +90,33 @@ def completed_task_serializer(tasks: list[CompletedTaskDetails]) -> list[dict]:
                 "comment": task.comment if task.comment else "",
                 "status": task.status if task.status else "",
                 "mark_as": task.mark_as if task.mark_as else "",
+                "reason_for_reassign": (
+                    task.reason_for_reassign if task.reason_for_reassign else ""
+                ),
                 "created_at": str(task.created_at) if task.created_at else "",
                 "updated_at": str(task.updated_at) if task.updated_at else "",
             }
         )
 
     return tasks_list
+
+
+def completed_task_file_serializer(files: list[CompletedTaskDetailFiles]) -> list[dict]:
+    files_list = []
+
+    if not isinstance(files, list):
+        files = [files]
+
+    for file in files:
+        files_list.append(
+            {
+                # Primary and Foreign Keys
+                "id": file.id,
+                "completed_task_detail_id": file.completed_task_detail_id,
+                "file_name": Config.BASE_URL + file.file_name,
+                "created_at": str(file.created_at),
+                "updated_at": str(file.updated_at),
+            }
+        )
+
+    return files_list

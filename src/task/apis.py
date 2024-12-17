@@ -1,16 +1,24 @@
 import logging
+import os
+from crewai import Agent, Crew, Task
 from sqlalchemy.orm import Session
 from database import get_db_session
+from src.config import Config
 from src.utils.logger import logger_set
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from src.task.task import task_creation_celery
 from fastapi import APIRouter, HTTPException, Request, Depends
-from src.task.serializers import CreateTaskSchema, completed_task_serializer
+from src.task.serializers import CreateTaskSchema, completed_task_file_serializer, completed_task_serializer
 from src.task.controllers import (
     TaskCompletedController,
+    TaskCompletedFileController,
     TaskCompletedTaskDetails,
     TaskController,
 )
+from textwrap import dedent
+from sqlalchemy import func
+from datetime import date
+from langchain_openai import ChatOpenAI
 
 router = APIRouter()
 
@@ -19,9 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("")
-async def get_task(
-    request: Request, id: int, db: Session = Depends(get_db_session)
-):
+async def get_task(request: Request, id: int, db: Session = Depends(get_db_session)):
     """
     Retrieve a task by its ID and return its details as a JSON response.
 
@@ -51,6 +57,12 @@ async def get_task(
             tasks = TaskCompletedTaskDetails.get_all_completed_task(db)
 
         task_ser = completed_task_serializer(tasks=tasks)
+
+        for i, task in enumerate(task_ser):
+            file = TaskCompletedFileController.get_completed_file_details(
+                db=db, completed_task_id=task["id"]
+            )
+            task_ser[i]['urls'] = completed_task_file_serializer(file) if file else None
 
         logger_set.info("Task listed successfully.")
         return JSONResponse(
@@ -167,4 +179,88 @@ def create_task(
                 "status": False,
                 "error": str(e),
             },
+        )
+
+
+@router.post("/work/summary/{id}")
+def summary_work_delay_task(
+    request: Request, id: int, db: Session = Depends(get_db_session)
+):
+    try:
+        summary = TaskController.summary_of_delayed_rework_task_ctrl(db=db, user_id=id)
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": "Summary created",
+                "data": {"summary": summary},
+                "status": True,
+                "error": "",
+            },
+        )
+    except HTTPException as e:
+        logger_set.error(f"Summary for work delay and rework failed : {str(e)}")
+        return JSONResponse(
+            status_code=e.status_code,
+            content={
+                "message": str(e.detail),
+                "data": {},
+                "status": False,
+                "error": str(e.detail),
+            },
+        )
+    except Exception as e:
+        logger_set.info(f"Error creating summary : {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "message": "Internal server error",
+                "data": {},
+                "status": False,
+                "error": str(e),
+            },
+        )
+
+
+@router.get("/download/{file_path:path}")
+def download_file(file_path: str):
+    """
+    Handle file download requests for CSV and Markdown files.
+
+    This function performs the following steps:
+    1. Constructs the actual file path based on the provided file_path.
+    2. Checks if the file exists.
+    3. Determines the media type based on the file extension.
+    4. Returns a FileResponse for the requested file.
+
+    Args:
+        file_path (str): The path of the file to be downloaded, relative to the 'static' directory.
+
+    Returns:
+        FileResponse: A response containing the file content, with appropriate headers for download.
+    """
+    try:
+        actual_path = os.path.abspath("static/" + file_path)
+
+        # Check if the file exists
+        if not os.path.isfile(actual_path):
+            raise HTTPException(status_code=404, detail="File not found")
+
+        # Determine the media type from the file extension
+        file_extension = os.path.splitext(file_path)[-1].lower()
+        if file_extension == ".csv":
+            media_type = "text/csv"
+        elif file_extension == ".md":
+            media_type = "text/markdown"
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file type")
+
+        return FileResponse(
+            path=actual_path,
+            filename=os.path.basename(file_path),
+            media_type=media_type,
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"data": {}, "error_msg": "Invalid request", "error": str(e)},
         )
