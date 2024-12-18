@@ -8,7 +8,11 @@ from src.utils.logger import logger_set
 from fastapi.responses import FileResponse, JSONResponse
 from src.task.task import task_creation_celery
 from fastapi import APIRouter, HTTPException, Request, Depends
-from src.task.serializers import CreateTaskSchema, completed_task_file_serializer, completed_task_serializer
+from src.task.serializers import (
+    CreateTaskSchema,
+    completed_task_file_serializer,
+    completed_task_serializer,
+)
 from src.task.controllers import (
     TaskCompletedController,
     TaskCompletedFileController,
@@ -62,7 +66,7 @@ async def get_task(request: Request, id: int, db: Session = Depends(get_db_sessi
             file = TaskCompletedFileController.get_completed_file_details(
                 db=db, completed_task_id=task["id"]
             )
-            task_ser[i]['urls'] = completed_task_file_serializer(file) if file else None
+            task_ser[i]["urls"] = completed_task_file_serializer(file) if file else []
 
         logger_set.info("Task listed successfully.")
         return JSONResponse(
